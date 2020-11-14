@@ -8,8 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -22,12 +20,14 @@ public class Receiver extends BroadcastReceiver {
 
     private final Map<String, Action> actions = ImmutableMap.<String, Action>builder()
             .put("ping", Actions::ping)
+            .put("set_volume", Actions::setVolume)
+            .put("wake_up", Actions::wakeUp)
             .build();
 
     @Override
     public void onReceive(Context context, Intent intent) {
         logger.fine("Received Intent: " + intent);
-        if (!intent.hasExtra("action") || !intent.hasExtra("data") || !intent.hasExtra("url")) {
+        if (!intent.hasExtra("action") || !intent.hasExtra("data") || !intent.hasExtra("port") || !intent.hasExtra("id")) {
             logger.warning("Received invalid Intent. A mandatory attribute is missing.");
             return;
         }
@@ -45,13 +45,32 @@ public class Receiver extends BroadcastReceiver {
             logger.warning("Received invalid Intent. Malformed Json: " + e.getMessage());
             return;
         }
-        URL url = null;
+
+        int port;
+        int id;
         try {
-            url = new URL(intent.getStringExtra("url"));
-        } catch (MalformedURLException e) {
-            logger.warning("Received invalid Intent. Invalid feedback URL.");
+            try {
+                port = intent.getIntExtra("port", Integer.MIN_VALUE);
+            } catch (ClassCastException e) {
+                port = Integer.MIN_VALUE;
+            }
+            if (port == Integer.MIN_VALUE) {
+                port = Integer.parseInt(intent.getStringExtra("port"));
+            }
+
+            try {
+                id = intent.getIntExtra("port", Integer.MIN_VALUE);
+            } catch (ClassCastException e) {
+                id = Integer.MIN_VALUE;
+            }
+            if (id == Integer.MIN_VALUE) {
+                id = Integer.parseInt(intent.getStringExtra("id"));
+            }
+        } catch (NumberFormatException e) {
+            logger.warning("Received invalid Intent. Invalid Integer: " + e.getMessage());
+            return;
         }
-        Feedback feedback = new Feedback(url);
+        Feedback feedback = new Feedback(port, id);
 
         if (this.actions.containsKey(actionId)) {
             Action action = this.actions.get(actionId);
@@ -69,7 +88,6 @@ public class Receiver extends BroadcastReceiver {
             }
         } else {
             logger.warning("Received invalid Intent. Invalid Action: " + actionId);
-            feedback.sendError("Received invalid Intent. Invalid Action: " + actionId);
         }
     }
 }

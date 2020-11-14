@@ -37,7 +37,10 @@
                     android:text="@string/description"
                     android:textSize="@dimen/text_size"
                     android:layout_weight="1"
-                    android:paddingTop="@dimen/text_size"/>
+                    android:paddingTop="@dimen/text_size"
+                    android:paddingBottom="@dimen/text_size"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="3dp"/>
 
     </LinearLayout>
 

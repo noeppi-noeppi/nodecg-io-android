@@ -6,5 +6,5 @@ import org.json.JSONObject;
 
 public interface Action {
 
-    void apply(Context ctx, JSONObject data, Feedback resp) throws JSONException, FailureException;
+    void apply(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException;
 }

@@ -5,17 +5,28 @@ import org.json.JSONObject;
 import org.json.JSONStringer;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class Feedback {
 
-    private final URL url;
+    public static ScheduledExecutorService networkExecutor = new ScheduledThreadPoolExecutor(1);
+
+    private final int port;
+    private final int id;
     private boolean hasSentFeedback = false;
 
-    public Feedback(URL url) {
-        this.url = url;
+    public Feedback(int port, int id) {
+        this.port = port;
+        this.id = id;
     }
 
     public boolean hasSentFeedback() {
@@ -28,16 +39,25 @@ public class Feedback {
         }
         this.hasSentFeedback = true;
         String json = data.toString();
-        try {
-            URLConnection c = this.url.openConnection();
-            c.setDoInput(true);
-            c.setDoOutput(true);
-            c.connect();
-            c.getOutputStream().write(StandardCharsets.UTF_8.encode(json + "\n").array());
-            c.getOutputStream().close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        networkExecutor.execute(() -> {
+            try {
+                URL url = new URL("http://127.0.0.1:" + this.port + "/");
+                HttpURLConnection c = (HttpURLConnection) url.openConnection();
+                c.setRequestMethod("POST");
+                c.setRequestProperty("nodecg-io-message-id", Integer.toString(this.id));
+                c.setDoInput(true);
+                c.setDoOutput(true);
+                c.connect();
+                Writer writer = new OutputStreamWriter(c.getOutputStream(), StandardCharsets.UTF_8);
+                writer.write(json);
+                writer.write("\n");
+                writer.close();
+                c.getOutputStream().close();
+                c.getInputStream().close();
+            } catch (IOException e) {
+                Receiver.logger.warning("Failed to send feedback: " + e.getMessage());
+            }
+        });
     }
 
     public void sendFeedback(JSONObject data) throws JSONException, FailureException {
@@ -68,9 +88,12 @@ public class Feedback {
     public void sendError(String data) {
         if (!this.hasSentFeedback) {
             try {
+                JSONObject jsonData = new JSONObject();
+                jsonData.put("error_msg", data);
+
                 JSONObject json = new JSONObject();
                 json.put("success", false);
-                json.put("error", data);
+                json.put("data", jsonData);
                 this.sendFeedbackRaw(json);
             } catch (FailureException | JSONException e) {
                 Receiver.logger.warning("Failed to send error feedback: " + e.getMessage());
