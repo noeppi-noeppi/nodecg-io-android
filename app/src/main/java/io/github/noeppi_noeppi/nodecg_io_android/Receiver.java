@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -20,13 +21,24 @@ public class Receiver extends BroadcastReceiver {
 
     private final Map<String, Action> actions = ImmutableMap.<String, Action>builder()
             .put("ping", Actions::ping)
+            .put("get_volume", Actions::getVolume)
+            .put("get_max_volume", Actions::getMaxVolume)
             .put("set_volume", Actions::setVolume)
+            .put("adjust_volume", Actions::adjustVolume)
             .put("wake_up", Actions::wakeUp)
+            .put("get_packages", Actions::getPackages)
+            .put("get_package", Actions::getPackage)
+            .put("get_activities", Actions::getActivities)
+            .put("get_activity", Actions::getActivity)
+            .put("start_activity", Actions::startActivity)
+            .put("get_package_version", Actions::getPackageVersion)
+            .put("notify", Actions::notify)
             .build();
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        logger.fine("Received Intent: " + intent);
+        logger.info("Received Intent: " + intent);
+        logger.info("Extras: " + Arrays.toString(intent.getExtras().keySet().toArray()));
         if (!intent.hasExtra("action") || !intent.hasExtra("data") || !intent.hasExtra("port") || !intent.hasExtra("id")) {
             logger.warning("Received invalid Intent. A mandatory attribute is missing.");
             return;
@@ -59,7 +71,7 @@ public class Receiver extends BroadcastReceiver {
             }
 
             try {
-                id = intent.getIntExtra("port", Integer.MIN_VALUE);
+                id = intent.getIntExtra("id", Integer.MIN_VALUE);
             } catch (ClassCastException e) {
                 id = Integer.MIN_VALUE;
             }

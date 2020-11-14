@@ -26,6 +26,14 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </receiver>
+
+        <receiver android:name=".Events">
+            <intent-filter>
+                <action android:name="nodecg-io.actions.EVENT"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

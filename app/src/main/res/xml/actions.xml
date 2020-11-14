@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<actions>
-    <action intentName="nodecg-io.actions.ACT">
-        <fulfillment urlTemplate="nodecg-io://act{?amount,currency,recipientBankAccountType,senderBankAccountType,mode}">
-            <parameter-mapping intentParameter="nodecg-io.action.name" urlParameter="name" />
-            <parameter-mapping intentParameter="nodecg-io.action.data" urlParameter="data" />
-        </fulfillment>
-    </action>
-</actions>
