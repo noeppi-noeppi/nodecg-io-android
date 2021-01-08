@@ -21,6 +21,7 @@ public class Receiver extends BroadcastReceiver {
 
     private final Map<String, Action> actions = ImmutableMap.<String, Action>builder()
             .put("ping", Actions::ping)
+            .put("request_permissions", Actions::requestPermissions)
             .put("get_volume", Actions::getVolume)
             .put("get_max_volume", Actions::getMaxVolume)
             .put("set_volume", Actions::setVolume)

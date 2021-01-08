@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import static io.github.noeppi_noeppi.nodecg_io_android.Receiver.logger;
 
+// Internally used to listen to android events and send them back to nodecg
 public class Events extends BroadcastReceiver {
 
     @Override
