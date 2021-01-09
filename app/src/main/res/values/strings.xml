@@ -2,4 +2,6 @@
     <string name="app_name" translatable="false">nodecg-io-android</string>
     <string name="description">nodecg-io-android is an android app that comes with an intent filter to control your android device via adb. This was created for nodecg-io. This app itself does nothing.</string>
     <string name="alert_permission_required">nodecg-io-android requires the SYSTEM ALERT WINDOW permission to work.</string>
+    <string name="foreground_service_title">nodecg-io-android</string>
+    <string name="foreground_service_text">nodecg-io-android is doing some work in background.</string>
 </resources>

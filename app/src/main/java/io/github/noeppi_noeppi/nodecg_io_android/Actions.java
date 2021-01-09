@@ -10,19 +10,22 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Icon;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.AudioManager;
+import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Base64;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Actions {
@@ -81,6 +84,26 @@ public class Actions {
         }
     }
     
+    public static void checkAvailability(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        String type = data.getString("type");
+        String value = data.getString("value");
+        for (AvailableObject obj : AvailableObject.values()) {
+            if (obj.type.equalsIgnoreCase(type) && obj.value.equalsIgnoreCase(value)) {
+                feedback.sendFeedback("available", obj.available(ctx));
+                return;
+            }
+        }
+        feedback.sendFeedback("available", false);
+    }
+    
+    public static void cancelSubscription(Context ctx, JSONObject data, Feedback feedback) throws JSONException {
+        Subscription.cancel(ctx, UUID.fromString(data.getString("subscription_id")));
+    }
+    
+    public static void cancelAllSubscriptions(Context ctx, JSONObject data, Feedback feedback) {
+        Subscription.cancelAll(ctx, feedback.getPort());
+    }
+    
     public static void getVolume(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         AudioManager audio = ctx.getSystemService(AudioManager.class);
         feedback.sendFeedback("volume", audio.getStreamVolume(Helper.getAudioStream(data)));
@@ -111,6 +134,10 @@ public class Actions {
         wakeLock.release();
     }
 
+    public static void showToast(Context ctx, JSONObject data, Feedback feedback) throws JSONException {
+        Toast.makeText(ctx, data.getString("text"), Toast.LENGTH_LONG).show();
+    }
+    
     public static void getPackages(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         List<PackageInfo> packages = ctx.getPackageManager().getInstalledPackages(0);
         JSONArray array = new JSONArray();
@@ -166,5 +193,65 @@ public class Actions {
                 .setAutoCancel(autoHide)
                 .build();
         nm.notify(nextNotification++, nn);
+    }
+    
+    public static void gpsActive(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        Permissions.ensure(ctx, Permission.GPS);
+        LocationManager mgr = ctx.getSystemService(LocationManager.class);
+        feedback.sendFeedback("active", mgr.isProviderEnabled(LocationManager.GPS_PROVIDER));
+    }
+    
+    public static void gpsLastKnownLocation(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        Permissions.ensure(ctx, Permission.GPS);
+        LocationManager mgr = ctx.getSystemService(LocationManager.class);
+        if (!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            throw new FailureException("GPS is not active.");
+        }
+        Location lastKnown = mgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        JSONObject json = new JSONObject();
+        if (lastKnown == null) {
+            json.put("has_location", false);
+        } else {
+            json.put("has_location", true);
+            json.put("location", Helper.locationToJson(lastKnown));
+        }
+        feedback.sendFeedback(json);
+    }
+    
+    public static void gpsSubscribe(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        Permissions.ensure(ctx, Permission.GPS);
+        LocationManager mgr = ctx.getSystemService(LocationManager.class);
+        int time = data.getInt("time");
+        float distance = (float) data.getDouble("distance");
+        Subscription subscription = Subscription.create(ctx, feedback);
+        LocationListener listener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                try {
+                    subscription.sendEvent(Helper.locationToJson(location));
+                    Receiver.logger.info("Sending location update to subscriber: " + subscription.id);
+                } catch (JSONException | FailureException e) {
+                    Receiver.logger.warning("Failed to send location update: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                }
+            }
+            
+            @Override
+            @SuppressWarnings("deprecation")
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                //
+            }
+
+            @Override
+            public void onProviderEnabled(@NonNull String provider) {
+                //
+            }
+
+            @Override
+            public void onProviderDisabled(@NonNull String provider) {
+                //
+            }
+        };
+        mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+        subscription.addCancellationHandler(context -> context.getSystemService(LocationManager.class).removeUpdates(listener));
     }
 }

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.media.AudioManager;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -106,5 +107,33 @@ public class Helper {
         }  else {
             throw new FailureException("Activity '" + aname + "' not found in package '" + pkg.packageName + "'.");
         }
+    }
+    
+    public static JSONObject locationToJson(Location location) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("latitude", location.getLatitude());
+        json.put("longitude", location.getLongitude());
+        if (location.hasAltitude()) {
+            json.put("altitude", location.getAltitude());
+        }
+        if (location.hasSpeed()) {
+            json.put("speed", location.getSpeed());
+        }
+        if (location.hasBearing()) {
+            json.put("bearing", location.getBearing());
+        }
+        if (location.hasAccuracy()) {
+            json.put("accuracyHorizontal", location.getAccuracy());
+        }
+        if (location.hasVerticalAccuracy()) {
+            json.put("accuracyVertical", location.getVerticalAccuracyMeters());
+        }
+        if (location.hasSpeedAccuracy()) {
+            json.put("accuracySpeed", location.getSpeedAccuracyMetersPerSecond());
+        }
+        if (location.hasBearingAccuracy()) {
+            json.put("accuracyBearing", location.getBearingAccuracyDegrees());
+        }
+        return json;
     }
 }

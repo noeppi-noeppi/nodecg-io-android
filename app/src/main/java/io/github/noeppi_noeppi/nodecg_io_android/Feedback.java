@@ -137,6 +137,62 @@ public class Feedback {
         this.sendFeedback(json);
     }
 
+    public void sendEvent(JSONObject data) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("success", true);
+        json.put("event", true);
+        json.put("data", data);
+        sendToNodecg(this.port, this.id, json.toString());
+    }
+
+    public void sendEvent(String msg) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("msg", msg);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, String value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, int value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, long value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, double value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, boolean value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, JSONObject value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
+    public void sendEvent(String key, JSONArray value) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put(key, value);
+        this.sendEvent(json);
+    }
+
     public void sendOptionalFeedback(JSONObject data) {
         if (!this.hasSentFeedback) {
             try {
@@ -227,6 +283,10 @@ public class Feedback {
                 Receiver.logger.warning("Failed to send error feedback: " + e.getMessage());
             }
         }
+    }
+
+    public int getPort() {
+        return this.port;
     }
 
     public static void sendToNodecg(int port, int id, String json) {

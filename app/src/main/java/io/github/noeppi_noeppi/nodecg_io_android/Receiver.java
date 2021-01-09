@@ -22,6 +22,10 @@ public class Receiver extends BroadcastReceiver {
     private final Map<String, Action> actions = ImmutableMap.<String, Action>builder()
             .put("ping", Actions::ping)
             .put("request_permissions", Actions::requestPermissions)
+            .put("check_availability", Actions::checkAvailability)
+            .put("show_toast", Actions::showToast)
+            .put("cancel_subscription", Actions::cancelSubscription)
+            .put("cancel_all_subscriptions", Actions::cancelAllSubscriptions)
             .put("get_volume", Actions::getVolume)
             .put("get_max_volume", Actions::getMaxVolume)
             .put("set_volume", Actions::setVolume)
@@ -34,6 +38,9 @@ public class Receiver extends BroadcastReceiver {
             .put("start_activity", Actions::startActivity)
             .put("get_package_version", Actions::getPackageVersion)
             .put("notify", Actions::notify)
+            .put("gps_active", Actions::gpsActive)
+            .put("gps_last_known_location", Actions::gpsLastKnownLocation)
+            .put("gps_subscribe", Actions::gpsSubscribe)
             .build();
 
     @Override
@@ -55,7 +62,7 @@ public class Receiver extends BroadcastReceiver {
                 logger.warning("Received invalid Intent. Json is not an object.");
             }
         } catch (JSONException e) {
-            logger.warning("Received invalid Intent. Malformed Json: " + e.getMessage());
+            logger.warning("Received invalid Intent. Invalid Json: " + e.getMessage());
             return;
         }
 
@@ -97,6 +104,12 @@ public class Receiver extends BroadcastReceiver {
                 } catch (FailureException e) {
                     logger.warning("Failed to process intent of type " + actionId + ": " + e.getMessage());
                     feedback.sendError("Failed to process intent of type " + actionId + ": " + e.getMessage());
+                } catch (RuntimeException e) {
+                    logger.warning("Intent of type " + actionId + " threw an exception: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    feedback.sendError("Intent of type " + actionId + " threw an exception: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                } catch (Throwable t) {
+                    feedback.sendError("Internal error");
+                    throw t;
                 }
             }
         } else {
