@@ -1,6 +1,8 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.location.LocationManager;
 import org.json.JSONException;
 
@@ -15,7 +17,17 @@ public enum AvailableObject {
             return providers != null && providers.contains(LocationManager.GPS_PROVIDER);
         }
         return false;
-    }, Permission.GPS)
+    }, Permission.GPS),
+    MOTION("sensor", "motion", ctx -> {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        return mgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_GRAVITY) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_GYROSCOPE_UNCALIBRATED) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null
+                && mgr.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null;
+    })
     ;
     
     public final String type;

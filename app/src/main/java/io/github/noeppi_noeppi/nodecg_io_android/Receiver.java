@@ -41,6 +41,8 @@ public class Receiver extends BroadcastReceiver {
             .put("gps_active", Actions::gpsActive)
             .put("gps_last_known_location", Actions::gpsLastKnownLocation)
             .put("gps_subscribe", Actions::gpsSubscribe)
+            .put("motion_current", Actions::motionCurrent)
+            .put("motion_subscribe", Actions::motionSubscribe)
             .build();
 
     @Override
@@ -111,6 +113,8 @@ public class Receiver extends BroadcastReceiver {
                     feedback.sendError("Internal error");
                     throw t;
                 }
+            } else {
+                feedback.sendError("Action not found.");
             }
         } else {
             logger.warning("Received invalid Intent. Invalid Action: " + actionId);

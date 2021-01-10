@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.hardware.*;
 import android.location.Location;
 import android.media.AudioManager;
 import org.json.JSONArray;
@@ -13,7 +14,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class Helper {
 
@@ -135,5 +138,18 @@ public class Helper {
             json.put("accuracyBearing", location.getBearingAccuracyDegrees());
         }
         return json;
+    }
+    
+    public static int getMotionSensorPart(String part) throws FailureException {
+        switch (part) {
+            case "accelerometer": return Sensor.TYPE_ACCELEROMETER;
+            case "accelerometer_uncalibrated": return Sensor.TYPE_ACCELEROMETER_UNCALIBRATED;
+            case "gravity": return Sensor.TYPE_GRAVITY;
+            case "gyroscope": return Sensor.TYPE_GYROSCOPE;
+            case "gyroscope_uncalibrated": return Sensor.TYPE_GYROSCOPE_UNCALIBRATED;
+            case "linear_acceleration": return Sensor.TYPE_LINEAR_ACCELERATION;
+            case "rotation_vector": return Sensor.TYPE_ROTATION_VECTOR;
+            default: throw new FailureException("Unknown motion sensor part: " + part);
+        }
     }
 }

@@ -10,6 +10,10 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Icon;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -36,6 +40,9 @@ public class Actions {
     public static void ping(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         Receiver.logger.info("Ping received. nodecg-io-android is right here!");
         feedback.sendFeedback("pong");
+
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        System.out.println("Sensors: \n\n" + mgr.getSensorList(Sensor.TYPE_ALL).stream().map(Sensor::toString).collect(Collectors.joining("\n")));
     }
     
     public static void requestPermissions(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
@@ -253,5 +260,38 @@ public class Actions {
         };
         mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
         subscription.addCancellationHandler(context -> context.getSystemService(LocationManager.class).removeUpdates(listener));
+    }
+    
+    public static void motionCurrent(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        MotionSensors.sendMotionSensorFeedback(mgr, Feedback.delay(feedback));
+    }
+
+    public static void motionSubscribe(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        int time = data.getInt("time");
+        int microseconds = time * 1000;
+        int sensorId = Helper.getMotionSensorPart(data.getString("part"));
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        Sensor sensor = mgr.getDefaultSensor(sensorId);
+        Subscription subscription = Subscription.create(ctx, feedback);
+        SensorEventListener listener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                try {
+                    JSONObject json = new JSONObject();
+                    MotionSensors.addSensorData(json, event, sensorId);
+                    subscription.sendEvent(json);
+                } catch (JSONException | FailureException e) {
+                    Receiver.logger.warning("Failed to send motion sensor update: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                
+            }
+        };
+        mgr.registerListener(listener, sensor, microseconds);
+        subscription.addCancellationHandler(context -> context.getSystemService(SensorManager.class).unregisterListener(listener));
     }
 }

@@ -333,4 +333,13 @@ public class Feedback {
         intent.removeExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
         return new Feedback(data[0], data[1]);
     }
+    
+    // Gets a new feedback and invalidates the old so you can send it later.
+    public static Feedback delay(Feedback feedback) throws FailureException {
+        if (feedback.hasSentFeedback) {
+            throw new FailureException("Tried delay an invalid feedback.");
+        }
+        feedback.hasSentFeedback = true;
+        return new Feedback(feedback.port, feedback.id);
+    }
 }
