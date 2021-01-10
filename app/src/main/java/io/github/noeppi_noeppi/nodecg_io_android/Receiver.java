@@ -43,6 +43,8 @@ public class Receiver extends BroadcastReceiver {
             .put("gps_subscribe", Actions::gpsSubscribe)
             .put("motion_current", Actions::motionCurrent)
             .put("motion_subscribe", Actions::motionSubscribe)
+            .put("magnetic_field", Actions::magneticField)
+            .put("ambient_light", Actions::ambientLight)
             .build();
 
     @Override

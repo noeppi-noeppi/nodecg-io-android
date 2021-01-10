@@ -27,6 +27,14 @@ public enum AvailableObject {
                 && mgr.getDefaultSensor(Sensor.TYPE_GYROSCOPE_UNCALIBRATED) != null
                 && mgr.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null
                 && mgr.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null;
+    }),
+    MAGNETIC_FIELD("sensor", "magnetic", ctx -> {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        return mgr.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null;
+    }),
+    AMBIENT_LIGHT("sensor", "light", ctx -> {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        return mgr.getDefaultSensor(Sensor.TYPE_LIGHT) != null;
     })
     ;
     

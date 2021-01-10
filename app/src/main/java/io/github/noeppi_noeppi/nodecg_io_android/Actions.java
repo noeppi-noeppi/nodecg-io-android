@@ -294,4 +294,58 @@ public class Actions {
         mgr.registerListener(listener, sensor, microseconds);
         subscription.addCancellationHandler(context -> context.getSystemService(SensorManager.class).unregisterListener(listener));
     }
+    
+    public static void magneticField(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        Sensor sensor = mgr.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        Feedback delayed = Feedback.delay(feedback);
+        SensorEventListener listener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                mgr.unregisterListener(this);
+                try {
+                    JSONObject json = new JSONObject();
+                    json.put("x", event.values[0]);
+                    json.put("y", event.values[1]);
+                    json.put("z", event.values[2]);
+                    delayed.sendFeedback("magnetic_field", json);
+                } catch (JSONException | FailureException e) {
+                    delayed.sendError("Failed: " + e.getMessage());
+                    Receiver.logger.warning("Failed to send magnetic field values: " + e.getMessage());
+                }
+                Receiver.logger.info(Arrays.toString(event.values));
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+        mgr.registerListener(listener, sensor, 0);
+    }
+    
+    public static void ambientLight(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
+        SensorManager mgr = ctx.getSystemService(SensorManager.class);
+        Sensor sensor = mgr.getDefaultSensor(Sensor.TYPE_LIGHT);
+        Feedback delayed = Feedback.delay(feedback);
+        SensorEventListener listener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                mgr.unregisterListener(this);
+                try {
+                    delayed.sendFeedback("light", event.values[0]);
+                } catch (JSONException | FailureException e) {
+                    delayed.sendError("Failed: " + e.getMessage());
+                    Receiver.logger.warning("Failed to send light value: " + e.getMessage());
+                }
+                Receiver.logger.info(Arrays.toString(event.values));
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+        mgr.registerListener(listener, sensor, 0);
+    }
 }

@@ -3,6 +3,8 @@ package io.github.noeppi_noeppi.nodecg_io_android;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -35,6 +37,12 @@ public class MainActivity extends AppCompatActivity {
 
         this.requestAlertPermission();
         this.requestIntentPermissions();
+
+        SensorManager mgr = this.getSystemService(SensorManager.class);
+        Receiver.logger.info("LIGHT: " + mgr.getDefaultSensor(Sensor.TYPE_LIGHT));
+        Receiver.logger.info("MAGNETIC_FIELD: " + mgr.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD));
+        Receiver.logger.info("PROXIMITY: " + mgr.getDefaultSensor(Sensor.TYPE_PROXIMITY));
+        Receiver.logger.info("STEP_COUNTER: " + mgr.getDefaultSensor(Sensor.TYPE_STEP_COUNTER));
     }
     
     private void requestAlertPermission() {
