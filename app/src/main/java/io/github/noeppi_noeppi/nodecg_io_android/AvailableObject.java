@@ -1,6 +1,7 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
@@ -10,6 +11,7 @@ import java.util.List;
 
 public enum AvailableObject {
     
+    TELEPHONY("system", "telephony", ctx -> ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY)),
     GPS("sensor", "gps", ctx -> {
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
         if (mgr != null) {

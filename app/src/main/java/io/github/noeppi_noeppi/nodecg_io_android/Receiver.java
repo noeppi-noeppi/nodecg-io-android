@@ -45,6 +45,8 @@ public class Receiver extends BroadcastReceiver {
             .put("motion_subscribe", Actions::motionSubscribe)
             .put("magnetic_field", Actions::magneticField)
             .put("ambient_light", Actions::ambientLight)
+            .put("get_telephonies", Actions::getTelephonies)
+            .put("get_telephony_properties", Actions::getTelephonyProperties)
             .build();
 
     @Override

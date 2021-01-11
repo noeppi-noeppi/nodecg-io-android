@@ -9,7 +9,10 @@ import java.util.Set;
 
 public enum Permission {
     
-    GPS("gps", Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ?  Manifest.permission.ACCESS_BACKGROUND_LOCATION : null)
+    GPS("gps", Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ?  Manifest.permission.ACCESS_BACKGROUND_LOCATION : null),
+    PHONE("phone", Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_PHONE_NUMBERS),
+    READ_SMS("read_sms", Manifest.permission.READ_SMS),
+    SEND_SMS("send_sms", Manifest.permission.SEND_SMS)
     ;
     
     // Id string used in nodecg-io-android

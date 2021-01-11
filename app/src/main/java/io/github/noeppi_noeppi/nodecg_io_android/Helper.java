@@ -1,22 +1,26 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.hardware.*;
+import android.hardware.Sensor;
 import android.location.Location;
 import android.media.AudioManager;
+import android.os.Build;
+import android.telephony.SmsManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class Helper {
 
@@ -151,5 +155,42 @@ public class Helper {
             case "rotation_vector": return Sensor.TYPE_ROTATION_VECTOR;
             default: throw new FailureException("Unknown motion sensor part: " + part);
         }
+    }
+    
+    public static SubscriptionInfo getTelephony(Context ctx, JSONObject data) throws JSONException, FailureException {
+        Permissions.ensure(ctx, Permission.PHONE);
+        SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
+        int subscriptionId = data.getInt("telephony");
+        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            throw new FailureException("Tries to access INVALID_SUBSCRIPTION_ID");
+        }
+        @SuppressLint("MissingPermission")
+        SubscriptionInfo subInfo = subm.getActiveSubscriptionInfo(subscriptionId);
+        if (subInfo == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            List<SubscriptionInfo> subList = subm.getAccessibleSubscriptionInfoList();
+            if (subList != null) {
+                subInfo = subm.getAccessibleSubscriptionInfoList().stream().filter(s -> s.getSubscriptionId() == subscriptionId).findFirst().orElse(null);
+            }
+        }
+        if (subInfo == null) {
+            throw new FailureException("Telephony not found: " + subscriptionId);
+        }
+        return subInfo;
+    }
+    
+    public static TelephonyManager getTelephonyManager(Context ctx, SubscriptionInfo subInfo) throws FailureException {
+        TelephonyManager mgr = ctx.getSystemService(TelephonyManager.class).createForSubscriptionId(subInfo.getSubscriptionId());
+        if (mgr == null) {
+            throw new FailureException("Could not access telephony: " + subInfo.getSubscriptionId());
+        }
+        return mgr;
+    }
+    
+    public static SmsManager getSmsManager(Context ctx, SubscriptionInfo subInfo) throws FailureException {
+        SmsManager mgr = SmsManager.getSmsManagerForSubscriptionId(subInfo.getSubscriptionId());
+        if (mgr == null) {
+            throw new FailureException("Could not access sms: " + subInfo.getSubscriptionId());
+        }
+        return mgr;
     }
 }

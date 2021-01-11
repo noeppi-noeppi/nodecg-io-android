@@ -18,9 +18,13 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Base64;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -347,5 +351,73 @@ public class Actions {
             }
         };
         mgr.registerListener(listener, sensor, 0);
+    }
+    
+    public static void getTelephonies(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.PHONE);
+        SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
+        Set<Integer> ids = new HashSet<>();
+        List<SubscriptionInfo> subList = subm.getActiveSubscriptionInfoList();
+        if (subList != null) {
+            for (SubscriptionInfo subInfo : subList) {
+                ids.add(subInfo.getSubscriptionId());
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            subList = subm.getAccessibleSubscriptionInfoList();
+            if (subList != null) {
+                for (SubscriptionInfo subInfo : subm.getAccessibleSubscriptionInfoList()) {
+                    ids.add(subInfo.getSubscriptionId());
+                }
+            }
+        }
+        ids.remove(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+        JSONArray array = new JSONArray();
+        for (int subId : ids) {
+            array.put(subId);
+        }
+        feedback.sendFeedback("telephonies", array);
+    }
+    
+    public static void getTelephonyProperties(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        SubscriptionInfo subInfo = Helper.getTelephony(ctx, data);
+        TelephonyManager mgr = Helper.getTelephonyManager(ctx, subInfo);
+        JSONObject json = new JSONObject();
+        
+        int simSlotIndex = subInfo.getSimSlotIndex();
+        if (simSlotIndex != SubscriptionManager.INVALID_SIM_SLOT_INDEX) {
+            json.put("simSlot", simSlotIndex);
+        }
+        
+        json.put("name", subInfo.getDisplayName().toString());
+        
+        String mcc = subInfo.getMccString();
+        if (mcc != null && !mcc.isEmpty()) {
+            json.put("countryCode", mcc);
+        }
+        
+        String mnc = subInfo.getMncString();
+        if (mnc != null && !mnc.isEmpty()) {
+            json.put("networkCode", mnc);
+        }
+        
+        String iso = subInfo.getCountryIso();
+        if (iso != null && !iso.isEmpty()) {
+            json.put("countryISO", iso);
+        }
+        
+        json.put("embedded", subInfo.isEmbedded());
+        
+        String number = mgr.getLine1Number();
+        if (number != null && !number.isEmpty()) {
+            json.put("number", number);
+        }
+        
+        String manufacturerCode = mgr.getManufacturerCode();
+        if (manufacturerCode != null && !manufacturerCode.isEmpty()) {
+            json.put("manufacturerCode", manufacturerCode);
+        }
+        
+        feedback.sendFeedback("properties", json);
     }
 }
