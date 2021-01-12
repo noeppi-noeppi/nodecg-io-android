@@ -4,11 +4,15 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.telephony.SmsManager;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,6 +36,11 @@ public class MainActivity extends AppCompatActivity {
 
         this.requestAlertPermission();
         this.requestIntentPermissions();
+
+        ContentProvider<Sms> smsProvider = new ContentProvider<>(this, ContentType.SMS_ALL);
+        for (Sms sms : smsProvider.query().getDataList(true)) {
+            System.out.println(sms.address + ": " + sms.body);
+        }
     }
     
     private void requestAlertPermission() {

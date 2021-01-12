@@ -24,10 +24,6 @@ import java.util.Optional;
 
 public class Helper {
 
-    private static NotificationChannel notificationsLow = null;
-    private static NotificationChannel notificationsNormal = null;
-    private static NotificationChannel notificationsHigh = null;
-
     public static int getAudioStream(JSONObject msg) throws JSONException {
         String channel = msg.getString("channel").toLowerCase();
         switch (channel) {

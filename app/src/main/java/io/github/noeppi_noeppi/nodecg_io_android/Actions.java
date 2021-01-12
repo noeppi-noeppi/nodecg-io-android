@@ -262,7 +262,7 @@ public class Actions {
                 //
             }
         };
-        mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+        mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, time, distance, listener);
         subscription.addCancellationHandler(context -> context.getSystemService(LocationManager.class).removeUpdates(listener));
     }
     
