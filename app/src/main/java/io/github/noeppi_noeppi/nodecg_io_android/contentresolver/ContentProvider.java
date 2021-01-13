@@ -41,11 +41,15 @@ public class ContentProvider<T> {
         return this.query(ContentFilter.EVERYTHING, null);
     }
     
+    public <F> ResultSet<T> query(AppliedFilter<F> filter) {
+        return this.query(filter.getLeft(), filter.getRight());
+    }
+    
     public <F> ResultSet<T> query(ContentFilter<F> filter, F value) {
         if (filter.availableTypes != null && !filter.availableTypes.contains(this.type)) {
             throw new IllegalArgumentException("Invalid filter given for query in ContentProvider");
         }
-        Cursor cursor = this.resolver.query(this.type.queryURI, this.type.projection.toArray(new String[]{}), filter.createFor(value), null, null);
+        Cursor cursor = this.resolver.query(this.type.queryURI, this.type.projection.toArray(new String[]{}), filter.createFor(this.type, value), null, null);
         return new ResultSet<>(this.type, cursor);
     }
 }

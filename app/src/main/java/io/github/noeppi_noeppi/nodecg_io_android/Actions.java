@@ -29,6 +29,12 @@ import android.util.Base64;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.AppliedFilter;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ResultSet;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -354,24 +360,7 @@ public class Actions {
     }
     
     public static void getTelephonies(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
-        Permissions.ensure(ctx, Permission.PHONE);
-        SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
-        Set<Integer> ids = new HashSet<>();
-        List<SubscriptionInfo> subList = subm.getActiveSubscriptionInfoList();
-        if (subList != null) {
-            for (SubscriptionInfo subInfo : subList) {
-                ids.add(subInfo.getSubscriptionId());
-            }
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            subList = subm.getAccessibleSubscriptionInfoList();
-            if (subList != null) {
-                for (SubscriptionInfo subInfo : subm.getAccessibleSubscriptionInfoList()) {
-                    ids.add(subInfo.getSubscriptionId());
-                }
-            }
-        }
-        ids.remove(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+        Set<Integer> ids = Helper.getTelephonyIds(ctx);
         JSONArray array = new JSONArray();
         for (int subId : ids) {
             array.put(subId);
@@ -419,5 +408,38 @@ public class Actions {
         }
         
         feedback.sendFeedback("properties", json);
+    }
+
+    public static void getTelephonyForMessage(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        long telephonyId = data.getLong("telephony_id");
+        feedback.sendFeedback("available", telephonyId >= 0 && Helper.getTelephonyIds(ctx).contains((int) telephonyId));
+    }
+    
+    public static void getSMS(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.READ_SMS);
+        ContentType<Sms> type = Helper.getSmsType(data);
+        AppliedFilter<?> filter = Helper.getSMSFilter(ctx, data);
+        ContentProvider<Sms> provider = new ContentProvider<>(ctx, type);
+        ResultSet<Sms> result = provider.query(filter);
+        List<Sms> smsList = result.getDataList();
+        JSONArray array = new JSONArray();
+        for (Sms sms : smsList) {
+            array.put(sms.toJSON());
+        }
+        feedback.sendFeedback("sms", array);
+    }
+
+    public static void getMMS(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.READ_SMS);
+        ContentType<Mms> type = Helper.getMmsType(data);
+        AppliedFilter<?> filter = Helper.getSMSFilter(ctx, data);
+        ContentProvider<Mms> provider = new ContentProvider<>(ctx, type);
+        ResultSet<Mms> result = provider.query(filter);
+        List<Mms> mmsList = result.getDataList();
+        JSONArray array = new JSONArray();
+        for (Mms mms : mmsList) {
+            array.put(mms.toJSON());
+        }
+        feedback.sendFeedback("sms", array);
     }
 }

@@ -47,6 +47,9 @@ public class Receiver extends BroadcastReceiver {
             .put("ambient_light", Actions::ambientLight)
             .put("get_telephonies", Actions::getTelephonies)
             .put("get_telephony_properties", Actions::getTelephonyProperties)
+            .put("get_telephony_for_message", Actions::getTelephonyForMessage)
+            .put("get_sms", Actions::getSMS)
+            .put("get_mms", Actions::getMMS)
             .build();
 
     @Override

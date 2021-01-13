@@ -1,13 +1,16 @@
 package io.github.noeppi_noeppi.nodecg_io_android.contentresolver;
 
 import android.database.Cursor;
-import android.util.Pair;
+import android.provider.BaseColumns;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.MapType;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -15,7 +18,10 @@ import java.util.function.BiFunction;
 
 public class ContentFactory<T> {
     
+    @SuppressWarnings("ConstantConditions")
+    public static final ContentFactory<Long> ID = new ContentFactory<>(Long.class, (c, m) -> c.getLong(m.get(BaseColumns._ID)), BaseColumns._ID);
     public static final ContentFactory<Sms> SMS = createFrom(Sms.class);
+    public static final ContentFactory<Mms> MMS = createFrom(Mms.class);
 
     public final Class<T> resultClass;
     public final List<String> projection;
@@ -48,7 +54,7 @@ public class ContentFactory<T> {
                     mapType = MapType.getAuto(field);
                 }
                 projection.add(mapColumn);
-                mutableMap.put(field, Pair.create(mapColumn, mapType));
+                mutableMap.put(field, Pair.of(mapColumn, mapType));
             }
         }
         Map<Field, Pair<String, MapType>> map = ImmutableMap.copyOf(mutableMap);
@@ -56,10 +62,13 @@ public class ContentFactory<T> {
             try {
                 T instance = clazz.newInstance();
                 for (Map.Entry<Field, Pair<String, MapType>> mapping : map.entrySet()) {
-                    if (columnMap.containsKey(mapping.getValue().first)) {
+                    if (columnMap.containsKey(mapping.getValue().getLeft())) {
                         //noinspection ConstantConditions
-                        mapping.getKey().set(instance, mapping.getValue().second
-                                .map(cursor, columnMap.get(mapping.getValue().first)));
+                        int columnId = columnMap.get(mapping.getValue().getLeft());
+                        if (!cursor.isNull(columnId)) {
+                            mapping.getKey().set(instance, mapping.getValue().getRight()
+                                    .map(cursor, columnId));
+                        }
                     }
                 }
                 return instance;

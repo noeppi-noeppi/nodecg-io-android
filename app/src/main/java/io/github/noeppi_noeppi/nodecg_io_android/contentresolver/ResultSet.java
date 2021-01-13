@@ -1,10 +1,10 @@
 package io.github.noeppi_noeppi.nodecg_io_android.contentresolver;
 
 import android.database.Cursor;
-import android.util.Pair;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.lang3.tuple.Pair;
 
-import javax.annotation.WillNotClose;
+import javax.annotation.WillClose;
 import java.io.Closeable;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -23,15 +23,15 @@ public class ResultSet<T> implements Closeable {
         this.type = type;
         this.cursor = cursor;
         this.columnMap = Collections.unmodifiableMap(type.projection.stream()
-                .map(s -> Pair.create(s, cursor.getColumnIndex(s)))
-                .collect(Collectors.toMap(p -> p.first, p -> p.second))
+                .map(s -> Pair.of(s, cursor.getColumnIndex(s)))
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight))
         );
         this.cursor.moveToFirst();
     }
     
-    @WillNotClose
+    @WillClose
     public List<T> getDataList() {
-        return this.getDataList(false);
+        return this.getDataList(true);
     }
     
     public List<T> getDataList(boolean close) {
@@ -39,8 +39,10 @@ public class ResultSet<T> implements Closeable {
             return ImmutableList.of();
         }
         List<T> list = new LinkedList<>();
-        while (this.cursor.moveToNext()) {
-            list.add(this.type.getFromCursor(this.cursor, this.columnMap));
+        if (this.cursor.moveToFirst()) {
+            do {
+                list.add(this.type.getFromCursor(this.cursor, this.columnMap));
+            } while (this.cursor.moveToNext());
         }
         this.cursor.moveToFirst();
         if (close) {
@@ -51,16 +53,43 @@ public class ResultSet<T> implements Closeable {
         return ImmutableList.copyOf(list);
     }
     
-    @WillNotClose
+    @WillClose
+    public T head() {
+        return this.head(true);
+    }
+    
+    public T head(boolean close) {
+        T t = null;
+        if (this.cursor.moveToFirst()) {
+            t = this.type.getFromCursor(this.cursor, this.columnMap);
+        }
+        if (close) {
+            this.close();
+        } else {
+            this.cursor.moveToFirst();
+        }
+        return t;
+    }
+    
+    @WillClose
     public void forEach(Consumer<T> action) {
+        this.forEach(action, true);
+    }
+    
+    public void forEach(Consumer<T> action, boolean close) {
         if (this.cursor == null || this.cursor.isClosed()) {
             return;
         }
-        
-        while (this.cursor.moveToNext()) {
-            action.accept(this.type.getFromCursor(this.cursor, this.columnMap));
+        if (this.cursor.moveToFirst()) {
+            do {
+                action.accept(this.type.getFromCursor(this.cursor, this.columnMap));
+            } while (this.cursor.moveToNext());
         }
-        this.cursor.moveToFirst();
+        if (close) {
+            this.close();
+        } else {
+            this.cursor.moveToFirst();
+        }
     }
 
     @Override

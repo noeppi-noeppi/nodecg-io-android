@@ -14,13 +14,17 @@ import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.AppliedFilter;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentFilter;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Helper {
 
@@ -153,6 +157,29 @@ public class Helper {
         }
     }
     
+    public static Set<Integer> getTelephonyIds(Context ctx) throws FailureException {
+        Permissions.ensure(ctx, Permission.PHONE);
+        SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
+        Set<Integer> ids = new HashSet<>();
+        @SuppressLint("MissingPermission")
+        List<SubscriptionInfo> subList = subm.getActiveSubscriptionInfoList();
+        if (subList != null) {
+            for (SubscriptionInfo subInfo : subList) {
+                ids.add(subInfo.getSubscriptionId());
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            subList = subm.getAccessibleSubscriptionInfoList();
+            if (subList != null) {
+                for (SubscriptionInfo subInfo : subm.getAccessibleSubscriptionInfoList()) {
+                    ids.add(subInfo.getSubscriptionId());
+                }
+            }
+        }
+        ids.remove(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+        return ids;
+    }
+    
     public static SubscriptionInfo getTelephony(Context ctx, JSONObject data) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.PHONE);
         SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
@@ -188,5 +215,42 @@ public class Helper {
             throw new FailureException("Could not access sms: " + subInfo.getSubscriptionId());
         }
         return mgr;
+    }
+    
+    public static AppliedFilter<?> getSMSFilter(Context ctx, JSONObject data) throws JSONException, FailureException {
+        String smsFilter = data.getString("sms_filter");
+        JSONObject resolveData = data.getJSONObject("sms_resolve_data");
+        switch (smsFilter.toLowerCase()) {
+            case "everything":
+                return ContentFilter.EVERYTHING.apply(null);
+            case "telephony":
+                return ContentFilter.SUBSCRIPTION.apply(getTelephony(ctx, resolveData));
+            default:
+                throw new FailureException("Unknown SMS filter: " + smsFilter);
+        }
+    }
+    
+    public static ContentType<Sms> getSmsType(JSONObject data) throws JSONException, FailureException {
+        String smsCategory = data.getString("sms_category");
+        switch (smsCategory.toLowerCase()) {
+            case "all": return ContentType.SMS_ALL;
+            case "inbox": return ContentType.SMS_INBOX;
+            case "outbox": return ContentType.SMS_OUTBOX;
+            case "sent": return ContentType.SMS_SENT;
+            case "draft": return ContentType.SMS_DRAFT;
+            default: throw new FailureException("Unknown SMS category: " + smsCategory);
+        }
+    }
+
+    public static  ContentType<Mms> getMmsType(JSONObject data) throws JSONException, FailureException {
+        String smsCategory = data.getString("sms_category");
+        switch (smsCategory.toLowerCase()) {
+            case "all": return ContentType.MMS_ALL;
+            case "inbox": return ContentType.MMS_INBOX;
+            case "outbox": return ContentType.MMS_OUTBOX;
+            case "sent": return ContentType.MMS_SENT;
+            case "draft": return ContentType.MMS_DRAFT;
+            default: throw new FailureException("Unknown SMS category: " + smsCategory);
+        }
     }
 }
