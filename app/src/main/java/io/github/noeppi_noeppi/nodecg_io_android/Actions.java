@@ -29,11 +29,10 @@ import android.util.Base64;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.AppliedFilter;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ResultSet;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.*;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.MessageThread;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Recipient;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -411,6 +410,7 @@ public class Actions {
     }
 
     public static void getTelephonyForMessage(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.PHONE);
         long telephonyId = data.getLong("telephony_id");
         feedback.sendFeedback("available", telephonyId >= 0 && Helper.getTelephonyIds(ctx).contains((int) telephonyId));
     }
@@ -441,5 +441,52 @@ public class Actions {
             array.put(mms.toJSON());
         }
         feedback.sendFeedback("sms", array);
+    }
+    
+    public static void getThreadForMessage(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.READ_SMS);
+        long threadId = data.getLong("thread_id");
+        MessageThread thread = threadId < 0 ? null : new ContentProvider<>(ctx, ContentType.MESSAGE_THREAD).query(ContentFilter.BY_ID, threadId).head();
+        if (thread == null) {
+            feedback.sendFeedback("available", false);
+        } else {
+            JSONObject json = new JSONObject();
+            json.put("available", true);
+            json.put("thread", thread.toJSON());
+            feedback.sendFeedback(json);
+        }
+    }
+    
+    public static void getSmsRecipient(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.READ_SMS);
+        long senderId = data.getLong("sender_id");
+        Recipient recipient = new ContentProvider<>(ctx, ContentType.RECIPIENT).query(ContentFilter.BY_ID, senderId).head();
+        if (recipient == null) {
+            feedback.sendFeedback("available", false);
+        } else {
+            JSONObject json = new JSONObject();
+            json.put("available", true);
+            json.put("recipient", recipient.toJSON());
+            feedback.sendFeedback(json);
+        }
+    }
+    
+    public static void getThreadRecipients(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.READ_SMS);
+        long threadId = data.getLong("id");
+        MessageThread thread = new ContentProvider<>(ctx, ContentType.MESSAGE_THREAD).query(ContentFilter.BY_ID, threadId).head();
+        if (thread == null) {
+            throw new FailureException("Unknown thread: " + threadId);
+        }
+        if (thread.recipients == null) {
+            throw new FailureException("Could not query thread recipients for thread: " + thread._id + " (" + threadId + ")");
+        }
+        Set<Long> recipientIds = Arrays.stream(thread.recipients.split(" ")).map(String::trim).map(Long::parseLong).collect(Collectors.toSet());
+        List<Recipient> recipients = new ContentProvider<>(ctx, ContentType.RECIPIENT).query(ContentFilter.BY_IDS, recipientIds).getDataList();
+        JSONArray array = new JSONArray();
+        for (Recipient recipient : recipients) {
+            array.put(recipient.toJSON());
+        }
+        feedback.sendFeedback("recipients", array);
     }
 }

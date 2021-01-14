@@ -15,8 +15,8 @@ public enum Permission {
     GPS("gps", ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, SDK_INT >= Q ?  ACCESS_BACKGROUND_LOCATION : null),
     PHONE("phone", READ_PHONE_STATE, READ_PHONE_NUMBERS),
     READ_SMS("read_sms", Manifest.permission.READ_SMS, RECEIVE_SMS, RECEIVE_MMS),
-    SEND_SMS("send_sms", Manifest.permission.SEND_SMS)
-    ;
+    SEND_SMS("send_sms", Manifest.permission.SEND_SMS),
+    CONTACTS("contacts", READ_CONTACTS, GET_ACCOUNTS);
     
     // Id string used in nodecg-io-android
     public final String id;

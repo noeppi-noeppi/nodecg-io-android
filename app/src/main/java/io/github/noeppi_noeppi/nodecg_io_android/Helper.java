@@ -1,7 +1,6 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.annotation.SuppressLint;
-import android.app.NotificationChannel;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
@@ -16,7 +15,6 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.AppliedFilter;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentFilter;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
@@ -225,6 +223,8 @@ public class Helper {
                 return ContentFilter.EVERYTHING.apply(null);
             case "telephony":
                 return ContentFilter.SUBSCRIPTION.apply(getTelephony(ctx, resolveData));
+            case "thread":
+                return ContentFilter.THREAD.apply(resolveData.getLong("thread_id"));
             default:
                 throw new FailureException("Unknown SMS filter: " + smsFilter);
         }

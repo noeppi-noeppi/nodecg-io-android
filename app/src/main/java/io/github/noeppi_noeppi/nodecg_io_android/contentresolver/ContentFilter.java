@@ -4,12 +4,15 @@ import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.telephony.SubscriptionInfo;
 import com.google.common.collect.ImmutableSet;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.MessageThread;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType.*;
 
@@ -17,6 +20,7 @@ public class ContentFilter<T> {
     
     public static final ContentFilter<Void> EVERYTHING = new ContentFilter<>((t, v) -> null);
     public static final ContentFilter<Long> BY_ID = new ContentFilter<>((t, v) -> BaseColumns._ID + " = " + v);
+    public static final ContentFilter<Collection<Long>> BY_IDS = new ContentFilter<>((t, v) -> BaseColumns._ID + " IN " + v.stream().map(l -> Long.toString(l)).collect(Collectors.joining(",", "(", ")")));
     public static final ContentFilter<SubscriptionInfo> SUBSCRIPTION = new ContentFilter<>((t, v) -> {
         if (t.resultClass == Sms.class) {
             return Telephony.TextBasedSmsColumns.SUBSCRIPTION_ID + " = " + v.getSubscriptionId();
@@ -26,7 +30,17 @@ public class ContentFilter<T> {
             throw new IllegalStateException("Illegal factory to be used with subscription filter: " + t.resultClass);
         }
     }, SMS_ALL, SMS_INBOX, SMS_OUTBOX, SMS_SENT, SMS_DRAFT, MMS_ALL, MMS_INBOX, MMS_OUTBOX, MMS_SENT, MMS_DRAFT);
-            
+    public static final ContentFilter<Long> THREAD = new ContentFilter<>((t, v) -> {
+        if (t.resultClass == Sms.class) {
+            return Telephony.TextBasedSmsColumns.THREAD_ID + " = " + v;
+        } else if (t.resultClass == Mms.class) {
+            return Telephony.BaseMmsColumns.THREAD_ID + " = " + v;
+        } else {
+            throw new IllegalStateException("Illegal factory to be used with subscription filter: " + t.resultClass);
+        }
+    }, SMS_ALL, SMS_INBOX, SMS_OUTBOX, SMS_SENT, SMS_DRAFT, MMS_ALL, MMS_INBOX, MMS_OUTBOX, MMS_SENT, MMS_DRAFT);
+    
+    
     // Null: Can be used on any content type
     @Nullable
     public final Set<ContentType<?>> availableTypes;

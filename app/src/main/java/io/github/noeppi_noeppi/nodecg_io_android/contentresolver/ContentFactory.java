@@ -4,13 +4,14 @@ import android.database.Cursor;
 import android.provider.BaseColumns;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Recipient;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.MessageThread;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.MapType;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -22,6 +23,8 @@ public class ContentFactory<T> {
     public static final ContentFactory<Long> ID = new ContentFactory<>(Long.class, (c, m) -> c.getLong(m.get(BaseColumns._ID)), BaseColumns._ID);
     public static final ContentFactory<Sms> SMS = createFrom(Sms.class);
     public static final ContentFactory<Mms> MMS = createFrom(Mms.class);
+    public static final ContentFactory<MessageThread> MESSAGE_THREAD = createFrom(MessageThread.class);
+    public static final ContentFactory<Recipient> RECIPIENT = createFrom(Recipient.class);
 
     public final Class<T> resultClass;
     public final List<String> projection;

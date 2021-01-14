@@ -50,6 +50,9 @@ public class Receiver extends BroadcastReceiver {
             .put("get_telephony_for_message", Actions::getTelephonyForMessage)
             .put("get_sms", Actions::getSMS)
             .put("get_mms", Actions::getMMS)
+            .put("get_thread_for_message", Actions::getThreadForMessage)
+            .put("get_sms_recipient", Actions::getSmsRecipient)
+            .put("get_thread_recipients", Actions::getThreadRecipients)
             .build();
 
     @Override
