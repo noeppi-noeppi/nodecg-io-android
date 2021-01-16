@@ -1,15 +1,11 @@
 package io.github.noeppi_noeppi.nodecg_io_android.contentresolver;
 
-import android.content.ContentUris;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.Telephony;
 import com.google.common.collect.ImmutableList;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.MessageThread;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Recipient;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
+import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.*;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +32,10 @@ public class ContentType<T> {
     ), ContentFactory.MESSAGE_THREAD);
 
     public static final ContentType<Recipient> RECIPIENT = new ContentType<>(Uri.parse("content://mms-sms/canonical-addresses"), ContentFactory.RECIPIENT);
-
+    
+    public static final ContentType<Contact> CONTACT = new ContentType<>(ContactsContract.Contacts.CONTENT_URI, ContentFactory.CONTACT);
+    public static final ContentType<ContactStatus> CONTACT_STATUS = new ContentType<>(ContactsContract.Contacts.CONTENT_URI, ContentFactory.CONTACT_STATUS);
+    public static final ContentType<ContactName> CONTACT_NAME = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_NAME);
 
     public final Class<T> resultClass;
 

@@ -1,6 +1,7 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
@@ -9,6 +10,7 @@ import android.hardware.Sensor;
 import android.location.Location;
 import android.media.AudioManager;
 import android.os.Build;
+import android.provider.ContactsContract;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -109,11 +111,11 @@ public class Helper {
         Optional<ActivityInfo> info = Arrays.stream(pkg.activities).filter(a -> a.name.equals(aname)).findFirst();
         if (info.isPresent()) {
             return info.get();
-        }  else {
+        } else {
             throw new FailureException("Activity '" + aname + "' not found in package '" + pkg.packageName + "'.");
         }
     }
-    
+
     public static JSONObject locationToJson(Location location) throws JSONException {
         JSONObject json = new JSONObject();
         json.put("latitude", location.getLatitude());
@@ -141,7 +143,7 @@ public class Helper {
         }
         return json;
     }
-    
+
     public static int getMotionSensorPart(String part) throws FailureException {
         switch (part) {
             case "accelerometer": return Sensor.TYPE_ACCELEROMETER;
@@ -154,7 +156,7 @@ public class Helper {
             default: throw new FailureException("Unknown motion sensor part: " + part);
         }
     }
-    
+
     public static Set<Integer> getTelephonyIds(Context ctx) throws FailureException {
         Permissions.ensure(ctx, Permission.PHONE);
         SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
@@ -177,7 +179,7 @@ public class Helper {
         ids.remove(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
         return ids;
     }
-    
+
     public static SubscriptionInfo getTelephony(Context ctx, JSONObject data) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.PHONE);
         SubscriptionManager subm = ctx.getSystemService(SubscriptionManager.class);
@@ -198,7 +200,7 @@ public class Helper {
         }
         return subInfo;
     }
-    
+
     public static TelephonyManager getTelephonyManager(Context ctx, SubscriptionInfo subInfo) throws FailureException {
         TelephonyManager mgr = ctx.getSystemService(TelephonyManager.class).createForSubscriptionId(subInfo.getSubscriptionId());
         if (mgr == null) {
@@ -206,7 +208,7 @@ public class Helper {
         }
         return mgr;
     }
-    
+
     public static SmsManager getSmsManager(Context ctx, SubscriptionInfo subInfo) throws FailureException {
         SmsManager mgr = SmsManager.getSmsManagerForSubscriptionId(subInfo.getSubscriptionId());
         if (mgr == null) {
@@ -214,7 +216,7 @@ public class Helper {
         }
         return mgr;
     }
-    
+
     public static AppliedFilter<?> getSMSFilter(Context ctx, JSONObject data) throws JSONException, FailureException {
         String smsFilter = data.getString("sms_filter");
         JSONObject resolveData = data.getJSONObject("sms_resolve_data");
@@ -229,7 +231,7 @@ public class Helper {
                 throw new FailureException("Unknown SMS filter: " + smsFilter);
         }
     }
-    
+
     public static ContentType<Sms> getSmsType(JSONObject data) throws JSONException, FailureException {
         String smsCategory = data.getString("sms_category");
         switch (smsCategory.toLowerCase()) {
@@ -242,7 +244,7 @@ public class Helper {
         }
     }
 
-    public static  ContentType<Mms> getMmsType(JSONObject data) throws JSONException, FailureException {
+    public static ContentType<Mms> getMmsType(JSONObject data) throws JSONException, FailureException {
         String smsCategory = data.getString("sms_category");
         switch (smsCategory.toLowerCase()) {
             case "all": return ContentType.MMS_ALL;
@@ -251,6 +253,90 @@ public class Helper {
             case "sent": return ContentType.MMS_SENT;
             case "draft": return ContentType.MMS_DRAFT;
             default: throw new FailureException("Unknown SMS category: " + smsCategory);
+        }
+    }
+
+    public static String getSmsResult(int code) {
+        switch (code) {
+            case Activity.RESULT_OK: return "success";
+            case SmsManager.RESULT_ERROR_GENERIC_FAILURE: return "error_generic_failure";
+            case SmsManager.RESULT_ERROR_RADIO_OFF: return "error_radio_off";
+            case SmsManager.RESULT_ERROR_NULL_PDU: return "error_null_pdu";
+            case SmsManager.RESULT_ERROR_NO_SERVICE: return "error_no_service";
+            case SmsManager.RESULT_ERROR_LIMIT_EXCEEDED: return "error_limit_exceeded";
+            case SmsManager.RESULT_ERROR_FDN_CHECK_FAILURE: return "error_fdn_check_failure";
+            case SmsManager.RESULT_ERROR_SHORT_CODE_NOT_ALLOWED: return "error_short_code_not_allowed";
+            case SmsManager.RESULT_ERROR_SHORT_CODE_NEVER_ALLOWED: return "error_short_code_never_allowed";
+            case SmsManager.RESULT_RADIO_NOT_AVAILABLE: return "radio_not_available";
+            case SmsManager.RESULT_NETWORK_REJECT: return "network_reject";
+            case SmsManager.RESULT_INVALID_ARGUMENTS: return "invalid_arguments";
+            case SmsManager.RESULT_INVALID_STATE: return "invalid_state";
+            case SmsManager.RESULT_NO_MEMORY: return "no_memory";
+            case SmsManager.RESULT_INVALID_SMS_FORMAT: return "invalid_sms_format";
+            case SmsManager.RESULT_SYSTEM_ERROR: return "system_error";
+            case SmsManager.RESULT_MODEM_ERROR: return "modem_error";
+            case SmsManager.RESULT_NETWORK_ERROR: return "network_error";
+            case SmsManager.RESULT_ENCODING_ERROR: return "encoding_error";
+            case SmsManager.RESULT_INVALID_SMSC_ADDRESS: return "invalid_smsc_address";
+            case SmsManager.RESULT_OPERATION_NOT_ALLOWED: return "operation_not_allowed";
+            case SmsManager.RESULT_INTERNAL_ERROR: return "internal_error";
+            case SmsManager.RESULT_NO_RESOURCES: return "no_resources";
+            case SmsManager.RESULT_CANCELLED: return "cancelled";
+            case SmsManager.RESULT_REQUEST_NOT_SUPPORTED: return "request_not_supported";
+            case SmsManager.RESULT_NO_BLUETOOTH_SERVICE: return "no_bluetooth_service";
+            case SmsManager.RESULT_INVALID_BLUETOOTH_ADDRESS: return "invalid_bluetooth_address";
+            case SmsManager.RESULT_BLUETOOTH_DISCONNECTED: return "bluetooth_disconnected";
+            case SmsManager.RESULT_UNEXPECTED_EVENT_STOP_SENDING: return "unexpected_event_stop_sending";
+            case SmsManager.RESULT_SMS_BLOCKED_DURING_EMERGENCY: return "sms_blocked_during_emergency";
+            case SmsManager.RESULT_SMS_SEND_RETRY_FAILED: return "sms_send_retry_failed";
+            case SmsManager.RESULT_REMOTE_EXCEPTION: return "remote_exception";
+            case SmsManager.RESULT_NO_DEFAULT_SMS_APP: return "no_default_sms_app";
+            case SmsManager.RESULT_RIL_RADIO_NOT_AVAILABLE: return "ril_radio_not_available";
+            case SmsManager.RESULT_RIL_SMS_SEND_FAIL_RETRY: return "ril_sms_send_fail_retry";
+            case SmsManager.RESULT_RIL_NETWORK_REJECT: return "ril_network_reject";
+            case SmsManager.RESULT_RIL_INVALID_STATE: return "ril_invalid_state";
+            case SmsManager.RESULT_RIL_INVALID_ARGUMENTS: return "ril_invalid_arguments";
+            case SmsManager.RESULT_RIL_NO_MEMORY: return "ril_no_memory";
+            case SmsManager.RESULT_RIL_REQUEST_RATE_LIMITED: return "ril_request_rate_limited";
+            case SmsManager.RESULT_RIL_INVALID_SMS_FORMAT: return "ril_invalid_sms_format";
+            case SmsManager.RESULT_RIL_SYSTEM_ERR: return "ril_system_err";
+            case SmsManager.RESULT_RIL_ENCODING_ERR: return "ril_encoding_err";
+            case SmsManager.RESULT_RIL_INVALID_SMSC_ADDRESS: return "ril_invalid_smsc_address";
+            case SmsManager.RESULT_RIL_MODEM_ERR: return "ril_modem_err";
+            case SmsManager.RESULT_RIL_NETWORK_ERR: return "ril_network_err";
+            case SmsManager.RESULT_RIL_INTERNAL_ERR: return "ril_internal_err";
+            case SmsManager.RESULT_RIL_REQUEST_NOT_SUPPORTED: return "ril_request_not_supported";
+            case SmsManager.RESULT_RIL_INVALID_MODEM_STATE: return "ril_invalid_modem_state";
+            case SmsManager.RESULT_RIL_NETWORK_NOT_READY: return "ril_network_not_ready";
+            case SmsManager.RESULT_RIL_OPERATION_NOT_ALLOWED: return "ril_operation_not_allowed";
+            case SmsManager.RESULT_RIL_NO_RESOURCES: return "ril_no_resources";
+            case SmsManager.RESULT_RIL_CANCELLED: return "ril_cancelled";
+            case SmsManager.RESULT_RIL_SIM_ABSENT: return "ril_sim_absent";
+            default: return "unknown";
+        }
+    }
+    
+    public static String getContactPresence(int contactPresenceId) {
+        switch (contactPresenceId) {
+            case ContactsContract.StatusUpdates.OFFLINE: return "offline";
+            case ContactsContract.StatusUpdates.INVISIBLE: return "invisible";
+            case ContactsContract.StatusUpdates.AWAY: return "away";
+            case ContactsContract.StatusUpdates.IDLE: return "idle";
+            case ContactsContract.StatusUpdates.DO_NOT_DISTURB: return "do_not_disturb";
+            case ContactsContract.StatusUpdates.AVAILABLE: return "available";
+            default: return "offline";
+        }
+    }
+    
+    public static String getContactNameStyle(int contactPresenceId) {
+        switch (contactPresenceId) {
+            case ContactsContract.FullNameStyle.UNDEFINED: return "unset";
+            case ContactsContract.FullNameStyle.WESTERN: return "western";
+            case ContactsContract.FullNameStyle.CJK: return "asian";
+            case ContactsContract.FullNameStyle.CHINESE: return "chinese";
+            case ContactsContract.FullNameStyle.JAPANESE: return "japanese";
+            case ContactsContract.FullNameStyle.KOREAN: return "korean";
+            default: return "unset";
         }
     }
 }

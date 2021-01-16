@@ -16,30 +16,21 @@ public class Events extends BroadcastReceiver {
         try {
             logger.info("Received Event Intent: " + intent);
             logger.info("Extras: " + Arrays.toString(intent.getExtras().keySet().toArray()));
-            if (intent.hasExtra("evtPort") && intent.hasExtra("evtId") && intent.hasExtra("evtData")) {
-                int port;
-                int id;
-                try {
-                    port = intent.getIntExtra("evtPort", Integer.MIN_VALUE);
-                } catch (ClassCastException e) {
-                    port = Integer.MIN_VALUE;
-                }
-                if (port == Integer.MIN_VALUE) {
-                    port = Integer.parseInt(intent.getStringExtra("evtPort"));
-                }
-
-                try {
-                    id = intent.getIntExtra("evtId", Integer.MIN_VALUE);
-                } catch (ClassCastException e) {
-                    id = Integer.MIN_VALUE;
-                }
-                if (id == Integer.MIN_VALUE) {
-                    id = Integer.parseInt(intent.getStringExtra("evtId"));
-                }
-                Feedback.sendToNodecg(port, id, intent.getStringExtra("evtData"));
+            int port;
+            int id;
+            try {
+                port = Integer.parseInt(intent.getStringExtra("evtPort"));
+                id = Integer.parseInt(intent.getStringExtra("evtId"));
+            } catch (NumberFormatException e) {
+                logger.warning("Internal Error: Received invalid Event Intent. Invalid Integer: " + e.getMessage());
+                return;
             }
+            System.out.println("EVTPORT: " + port);
+            EventGenerator gen = EventGenerator.valueOf(intent.getStringExtra("evtGenerator"));
+            Feedback.sendToNodecg(port, id, gen.get(this.getResultCode(), intent));
         } catch (Exception e) {
-            //
+            logger.warning("Internal Error: Received invalid Event Intent: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

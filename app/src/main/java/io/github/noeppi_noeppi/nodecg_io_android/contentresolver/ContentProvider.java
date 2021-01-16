@@ -29,7 +29,7 @@ public class ContentProvider<T> {
             Uri uriToUse = type.queryURI.get(0);
             for (Uri uri : type.queryURI) {
                 try {
-                    this.resolver.query(uri, type.projection.toArray(new String[]{}), "NULL = NULL", null, null).close();
+                    this.resolver.query(uri, type.projection.toArray(new String[]{}), ContentFilter.NOTHING.createFor(type, null), null, null).close();
                 } catch (SQLException e) {
                     continue;
                 }
@@ -64,9 +64,6 @@ public class ContentProvider<T> {
     }
     
     public <F> ResultSet<T> query(ContentFilter<F> filter, F value) {
-        if (filter.availableTypes != null && !filter.availableTypes.contains(this.type)) {
-            throw new IllegalArgumentException("Invalid filter given for query in ContentProvider");
-        }
         Cursor cursor = this.resolver.query(this.queryURI, this.type.projection.toArray(new String[]{}), filter.createFor(this.type, value), null, null);
         return new ResultSet<>(this.type, cursor);
     }

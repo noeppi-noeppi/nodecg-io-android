@@ -53,6 +53,10 @@ public class Receiver extends BroadcastReceiver {
             .put("get_thread_for_message", Actions::getThreadForMessage)
             .put("get_sms_recipient", Actions::getSmsRecipient)
             .put("get_thread_recipients", Actions::getThreadRecipients)
+            .put("send_sms", Actions::sendSMS)
+            .put("get_all_contacts", Actions::getAllContacts)
+            .put("contact_status", Actions::contactStatus)
+            .put("contact_name", Actions::contactName)
             .build();
 
     @Override
@@ -81,27 +85,15 @@ public class Receiver extends BroadcastReceiver {
         int port;
         int id;
         try {
-            try {
-                port = intent.getIntExtra("port", Integer.MIN_VALUE);
-            } catch (ClassCastException e) {
-                port = Integer.MIN_VALUE;
-            }
-            if (port == Integer.MIN_VALUE) {
-                port = Integer.parseInt(intent.getStringExtra("port"));
-            }
-
-            try {
-                id = intent.getIntExtra("id", Integer.MIN_VALUE);
-            } catch (ClassCastException e) {
-                id = Integer.MIN_VALUE;
-            }
-            if (id == Integer.MIN_VALUE) {
-                id = Integer.parseInt(intent.getStringExtra("id"));
-            }
+            port = Integer.parseInt(intent.getStringExtra("port"));
+            id = Integer.parseInt(intent.getStringExtra("id"));
         } catch (NumberFormatException e) {
             logger.warning("Received invalid Intent. Invalid Integer: " + e.getMessage());
             return;
         }
+
+        System.out.println("PORT: " + port);
+        
         Feedback feedback = new Feedback(port, id);
 
         if (this.actions.containsKey(actionId)) {

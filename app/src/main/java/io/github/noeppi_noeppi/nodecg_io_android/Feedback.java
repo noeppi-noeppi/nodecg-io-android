@@ -216,7 +216,19 @@ public class Feedback {
                 .setClass(ctx, Events.class)
                 .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
                 .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
+                .putExtra("evtGenerator", EventGenerator.DEFAULT.name())
                 .putExtra("evtData", json.toString()),
+                PendingIntent.FLAG_IMMUTABLE);
+    }
+    
+    public PendingIntent getEvent(Context ctx, EventGenerator generator) {
+        return PendingIntent.getBroadcast(ctx, nextIntentCode++, new Intent()
+                .setAction("nodecg-io.actions.EVENT")
+                .addCategory(Intent.CATEGORY_DEFAULT)
+                .setClass(ctx, Events.class)
+                .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
+                .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
+                .putExtra("evtGenerator", generator.name()),
                 PendingIntent.FLAG_IMMUTABLE);
     }
 
@@ -294,7 +306,6 @@ public class Feedback {
             try {
                 URL url = new URL("http://127.0.0.1:" + port + "/");
                 HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                //c.setSSLSocketFactory(ssl.getSocketFactory());
                 c.setRequestMethod("POST");
                 c.setRequestProperty("nodecg-io-message-id", Integer.toString(id));
                 c.setDoInput(true);
@@ -308,6 +319,7 @@ public class Feedback {
                 c.getInputStream().close();
             } catch (IOException e) {
                 Receiver.logger.warning("Failed to send feedback: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }

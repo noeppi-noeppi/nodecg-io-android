@@ -4,26 +4,30 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class AppliedFilter<T> extends Pair<ContentFilter<T>, T> {
 
-    private final ContentFilter<T> left;
-    private final T right;
+    public final ContentFilter<T> filter;
+    public final T value;
 
-    AppliedFilter(ContentFilter<T> left, T right) {
-        this.left = left;
-        this.right = right;
+    AppliedFilter(ContentFilter<T> filter, T value) {
+        this.filter = filter;
+        this.value = value;
     }
 
     @Override
     public ContentFilter<T> getLeft() {
-        return this.left;
+        return this.filter;
     }
 
     @Override
     public T getRight() {
-        return this.right;
+        return this.value;
     }
 
     @Override
     public T setValue(T value) {
         throw new UnsupportedOperationException();
+    }
+    
+    public String createFor(ContentType<?> type) {
+        return this.filter.createFor(type, this.value);
     }
 }
