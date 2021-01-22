@@ -59,6 +59,8 @@ public class Receiver extends BroadcastReceiver {
             .put("find_contact", Actions::findContact)
             .put("find_contacts", Actions::findContacts)
             .put("get_contact_data", Actions::getContactData)
+            .put("wifi_information", Actions::getWifiInformation)
+            .put("wifi_state", Actions::getWifiState)
             .build();
 
     @Override

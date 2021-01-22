@@ -18,10 +18,12 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.AudioManager;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
@@ -53,7 +55,7 @@ public class Actions {
         SensorManager mgr = ctx.getSystemService(SensorManager.class);
         System.out.println("Sensors: \n\n" + mgr.getSensorList(Sensor.TYPE_ALL).stream().map(Sensor::toString).collect(Collectors.joining("\n")));
     }
-    
+
     public static void requestPermissions(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         JSONArray permissionsArray = data.getJSONArray("permissions");
         Set<String> permissions = new HashSet<>();
@@ -83,7 +85,7 @@ public class Actions {
             intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-            
+
             // Very weird but it seems to only work this way...
             PendingIntent pi = PendingIntent.getActivity(ctx, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
             try {
@@ -99,7 +101,7 @@ public class Actions {
             }
         }
     }
-    
+
     public static void checkAvailability(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         String type = data.getString("type");
         String value = data.getString("value");
@@ -111,15 +113,15 @@ public class Actions {
         }
         feedback.sendFeedback("available", false);
     }
-    
+
     public static void cancelSubscription(Context ctx, JSONObject data, Feedback feedback) throws JSONException {
         Subscription.cancel(ctx, UUID.fromString(data.getString("subscription_id")));
     }
-    
+
     public static void cancelAllSubscriptions(Context ctx, JSONObject data, Feedback feedback) {
         Subscription.cancelAll(ctx, feedback.getPort());
     }
-    
+
     public static void getVolume(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         AudioManager audio = ctx.getSystemService(AudioManager.class);
         feedback.sendFeedback("volume", audio.getStreamVolume(Helper.getAudioStream(data)));
@@ -153,7 +155,7 @@ public class Actions {
     public static void showToast(Context ctx, JSONObject data, Feedback feedback) throws JSONException {
         Toast.makeText(ctx, data.getString("text"), Toast.LENGTH_LONG).show();
     }
-    
+
     public static void getPackages(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         List<PackageInfo> packages = ctx.getPackageManager().getInstalledPackages(0);
         JSONArray array = new JSONArray();
@@ -210,13 +212,13 @@ public class Actions {
                 .build();
         nm.notify(nextNotification++, nn);
     }
-    
+
     public static void gpsActive(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.GPS);
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
         feedback.sendFeedback("active", mgr.isProviderEnabled(LocationManager.GPS_PROVIDER));
     }
-    
+
     public static void gpsLastKnownLocation(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.GPS);
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
@@ -233,7 +235,7 @@ public class Actions {
         }
         feedback.sendFeedback(json);
     }
-    
+
     public static void gpsSubscribe(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.GPS);
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
@@ -250,7 +252,7 @@ public class Actions {
                     Receiver.logger.warning("Failed to send location update: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
-            
+
             @Override
             @SuppressWarnings("deprecation")
             public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -270,7 +272,7 @@ public class Actions {
         mgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, time, distance, listener);
         subscription.addCancellationHandler(context -> context.getSystemService(LocationManager.class).removeUpdates(listener));
     }
-    
+
     public static void motionCurrent(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
         SensorManager mgr = ctx.getSystemService(SensorManager.class);
         MotionSensors.sendMotionSensorFeedback(mgr, Feedback.delay(feedback));
@@ -297,13 +299,13 @@ public class Actions {
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
-                
+
             }
         };
         mgr.registerListener(listener, sensor, microseconds);
         subscription.addCancellationHandler(context -> context.getSystemService(SensorManager.class).unregisterListener(listener));
     }
-    
+
     public static void magneticField(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
         SensorManager mgr = ctx.getSystemService(SensorManager.class);
         Sensor sensor = mgr.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -332,7 +334,7 @@ public class Actions {
         };
         mgr.registerListener(listener, sensor, 0);
     }
-    
+
     public static void ambientLight(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
         SensorManager mgr = ctx.getSystemService(SensorManager.class);
         Sensor sensor = mgr.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -357,7 +359,7 @@ public class Actions {
         };
         mgr.registerListener(listener, sensor, 0);
     }
-    
+
     public static void getTelephonies(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Set<Integer> ids = Helper.getTelephonyIds(ctx);
         JSONArray array = new JSONArray();
@@ -366,46 +368,46 @@ public class Actions {
         }
         feedback.sendFeedback("telephonies", array);
     }
-    
+
     public static void getTelephonyProperties(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         SubscriptionInfo subInfo = Helper.getTelephony(ctx, data);
         TelephonyManager mgr = Helper.getTelephonyManager(ctx, subInfo);
         JSONObject json = new JSONObject();
-        
+
         int simSlotIndex = subInfo.getSimSlotIndex();
         if (simSlotIndex != SubscriptionManager.INVALID_SIM_SLOT_INDEX) {
             json.put("simSlot", simSlotIndex);
         }
-        
+
         json.put("name", subInfo.getDisplayName().toString());
-        
+
         String mcc = subInfo.getMccString();
         if (mcc != null && !mcc.isEmpty()) {
             json.put("countryCode", mcc);
         }
-        
+
         String mnc = subInfo.getMncString();
         if (mnc != null && !mnc.isEmpty()) {
             json.put("networkCode", mnc);
         }
-        
+
         String iso = subInfo.getCountryIso();
         if (iso != null && !iso.isEmpty()) {
             json.put("countryISO", iso);
         }
-        
+
         json.put("embedded", subInfo.isEmbedded());
-        
+
         String number = mgr.getLine1Number();
         if (number != null && !number.isEmpty()) {
             json.put("number", number);
         }
-        
+
         String manufacturerCode = mgr.getManufacturerCode();
         if (manufacturerCode != null && !manufacturerCode.isEmpty()) {
             json.put("manufacturerCode", manufacturerCode);
         }
-        
+
         feedback.sendFeedback("properties", json);
     }
 
@@ -414,7 +416,7 @@ public class Actions {
         long telephonyId = data.getLong("telephony_id");
         feedback.sendFeedback("available", telephonyId >= 0 && Helper.getTelephonyIds(ctx).contains((int) telephonyId));
     }
-    
+
     public static void getSMS(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.READ_SMS);
         ContentType<Sms> type = Helper.getSmsType(data);
@@ -442,7 +444,7 @@ public class Actions {
         }
         feedback.sendFeedback("sms", array);
     }
-    
+
     public static void getThreadForMessage(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.READ_SMS);
         long threadId = data.getLong("thread_id");
@@ -456,7 +458,7 @@ public class Actions {
             feedback.sendFeedback(json);
         }
     }
-    
+
     public static void getSmsRecipient(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.READ_SMS);
         long senderId = data.getLong("sender_id");
@@ -470,7 +472,7 @@ public class Actions {
             feedback.sendFeedback(json);
         }
     }
-    
+
     public static void getThreadRecipients(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.READ_SMS);
         long threadId = data.getLong("id");
@@ -489,7 +491,7 @@ public class Actions {
         }
         feedback.sendFeedback("recipients", array);
     }
-    
+
     public static void sendSMS(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.SEND_SMS, Permission.PHONE);
         String address = data.getString("address");
@@ -524,7 +526,7 @@ public class Actions {
         }
         feedback.sendFeedback("contact_ids", array);
     }
-    
+
     public static void contactStatus(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.CONTACTS);
         long contactId = data.getLong("id");
@@ -534,7 +536,7 @@ public class Actions {
         }
         feedback.sendFeedback("status", status.toJSON());
     }
-    
+
     public static void findContact(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.CONTACTS);
         ContactDataGroup<?> group = ContactDataGroup.byId(data.getString("dataId"));
@@ -548,7 +550,7 @@ public class Actions {
             feedback.sendFeedback("contact_id", matches.stream().min(Comparator.comparingLong(c -> c._id)).get().toJSON());
         }
     }
-    
+
     public static void findContacts(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.CONTACTS);
         ContactDataGroup<?> group = ContactDataGroup.byId(data.getString("dataId"));
@@ -562,7 +564,7 @@ public class Actions {
         }
         feedback.sendFeedback("contact_ids", array);
     }
-    
+
     public static void getContactData(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.CONTACTS);
         long contactId = data.getLong("id");
@@ -573,5 +575,61 @@ public class Actions {
         Pair<String, String> account = Helper.getContactDataAccount(data);
         OptionalLong rawContactId = ContactDataGroup.getRawContactId(ctx, contactId, account);
         group.sendResult(ctx, rawContactId, feedback);
+    }
+
+    public static void getWifiInformation(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        WifiManager mgr = ctx.getSystemService(WifiManager.class);
+        JSONObject json = new JSONObject();
+        json.put("has5GHz", mgr.is5GHzBandSupported());
+        json.put("has6GHz", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.is6GHzBandSupported());
+        json.put("p2p", mgr.isP2pSupported());
+        json.put("sta_ap_concurrency", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isStaApConcurrencySupported());
+        json.put("tdls", mgr.isTdlsSupported());
+        json.put("easy_connect", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && mgr.isEasyConnectSupported());
+        json.put("enhanced_open", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && mgr.isEnhancedOpenSupported());
+        json.put("wapi", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isWapiSupported());
+        json.put("wpa3sae", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && mgr.isWpa3SaeSupported());
+        json.put("wpa3sb192", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && mgr.isWpa3SuiteBSupported());
+        json.put("ieee80211abg", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isWifiStandardSupported(ScanResult.WIFI_STANDARD_LEGACY));
+        json.put("ieee80211n", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isWifiStandardSupported(ScanResult.WIFI_STANDARD_11N));
+        json.put("ieee80211ac", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isWifiStandardSupported(ScanResult.WIFI_STANDARD_11AC));
+        json.put("ieee80211ax", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && mgr.isWifiStandardSupported(ScanResult.WIFI_STANDARD_11AX));
+        feedback.sendFeedback("info", json);
+    }
+
+    public static void getWifiState(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        //Permissions.ensure(ctx, Permission.GPS);
+        WifiManager mgr = ctx.getSystemService(WifiManager.class);
+        JSONObject json = new JSONObject();
+        json.put("device_state", Helper.getWifiDeviceState(mgr.getWifiState()));
+        WifiInfo connection = mgr.getConnectionInfo();
+        if (connection != null && connection.getIpAddress() != 0 /* 0.0.0.0 */) {
+            json.put("connected", true);
+            json.put("ssid", connection.getSSID());
+            json.put("bssid", connection.getBSSID());
+            json.put("hidden_ssid", connection.getHiddenSSID());
+            json.put("ip", Helper.ipToString(connection.getIpAddress()));
+            json.put("frequency", connection.getFrequency());
+            if (connection.getLinkSpeed() != WifiInfo.LINK_SPEED_UNKNOWN) {
+                json.put("link_speed", connection.getLinkSpeed());
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && connection.getMaxSupportedRxLinkSpeedMbps() != WifiInfo.LINK_SPEED_UNKNOWN) {
+                json.put("max_rx", connection.getMaxSupportedRxLinkSpeedMbps());
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && connection.getMaxSupportedTxLinkSpeedMbps() != WifiInfo.LINK_SPEED_UNKNOWN) {
+                json.put("max_tx", connection.getMaxSupportedTxLinkSpeedMbps());
+            }
+            json.put("mac_address", connection.getMacAddress());
+            json.put("rssi", connection.getRssi());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                json.put("signal_level", mgr.calculateSignalLevel(connection.getRssi()) / (double) mgr.getMaxSignalLevel());
+            } else {
+                //noinspection deprecation
+                json.put("signal_level", WifiManager.calculateSignalLevel(connection.getRssi(), 100) / (double) 100);
+            }
+        } else {
+            json.put("connected", false);
+        }
+        feedback.sendFeedback("state", json);
     }
 }

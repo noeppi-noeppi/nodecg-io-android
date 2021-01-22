@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.location.Location;
 import android.media.AudioManager;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.ContactsContract;
 import android.telephony.SmsManager;
@@ -412,5 +414,31 @@ public class Helper {
             case ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER: return "other";
             default: return "other";
         }
+    }
+
+    public static String getWifiDeviceState(int wifiState) {
+        switch (wifiState) {
+            case WifiManager.WIFI_STATE_DISABLED: return "disabled";
+            case WifiManager.WIFI_STATE_DISABLING: return "disabling";
+            case WifiManager.WIFI_STATE_ENABLED: return "enabled";
+            case WifiManager.WIFI_STATE_ENABLING: return "enabling";
+            case WifiManager.WIFI_STATE_UNKNOWN: return "unknown";
+            default: return "unknown";
+        }
+    }
+    
+    public static String getWifiConnectionStandard(int wifiStandard) {
+        switch (wifiStandard) {
+            case ScanResult.WIFI_STANDARD_LEGACY: return "ieee80211abg";
+            case ScanResult.WIFI_STANDARD_11N: return "ieee80211n";
+            case ScanResult.WIFI_STANDARD_11AC: return "ieee80211ac";
+            case ScanResult.WIFI_STANDARD_11AX: return "ieee80211ax";
+            case ScanResult.WIFI_STANDARD_UNKNOWN: return "unknown";
+            default: return "unknown";
+        }
+    }
+    
+    public static String ipToString(int ip) {
+        return "" + (ip & 0xFF) + "." + ((ip >>> 8) & 0xFF) + "." + ((ip >>> 16) & 0xFF) + "." + ((ip >>> 24) & 0xFF);
     }
 }
