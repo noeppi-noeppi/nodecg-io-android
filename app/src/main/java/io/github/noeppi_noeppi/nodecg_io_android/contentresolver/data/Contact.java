@@ -4,10 +4,11 @@ import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
+import io.github.noeppi_noeppi.nodecg_io_android.util.ToJSONArray;
 import org.json.JSONArray;
 
 @DataClass
-public class Contact {
+public class Contact implements ToJSONArray {
 
     @Mapping(BaseColumns._ID)
     public long _id;

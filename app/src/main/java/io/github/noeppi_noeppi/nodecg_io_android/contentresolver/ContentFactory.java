@@ -2,6 +2,7 @@ package io.github.noeppi_noeppi.nodecg_io_android.contentresolver;
 
 import android.database.Cursor;
 import android.provider.BaseColumns;
+import android.provider.ContactsContract;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.*;
@@ -24,9 +25,17 @@ public class ContentFactory<T> {
     public static final ContentFactory<Recipient> RECIPIENT = createFrom(Recipient.class);
     
     public static final ContentFactory<Contact> CONTACT = createFrom(Contact.class);
+    @SuppressWarnings("ConstantConditions")
+    public static final ContentFactory<Long> CONTACT_ID_FROM_DATA = new ContentFactory<>(Long.class, (c, m) -> c.getLong(m.get(ContactsContract.Data.CONTACT_ID)), ContactsContract.Data.CONTACT_ID);
     public static final ContentFactory<ContactStatus> CONTACT_STATUS = createFrom(ContactStatus.class);
     public static final ContentFactory<ContactName> CONTACT_NAME = createFrom(ContactName.class);
-
+    public static final ContentFactory<ContactPhone> CONTACT_PHONE = createFrom(ContactPhone.class);
+    public static final ContentFactory<ContactEmail> CONTACT_EMAIL = createFrom(ContactEmail.class);
+    public static final ContentFactory<ContactEvent> CONTACT_EVENT = createFrom(ContactEvent.class);
+    public static final ContentFactory<ContactNickname> CONTACT_NICKNAME = createFrom(ContactNickname.class);
+    public static final ContentFactory<ContactNotes> CONTACT_NOTES = createFrom(ContactNotes.class);
+    public static final ContentFactory<ContactAddress> CONTACT_ADDRESS = createFrom(ContactAddress.class);
+    
     public final Class<T> resultClass;
     public final List<String> projection;
     private final BiFunction<Cursor, Map<String, Integer>, T> factory;

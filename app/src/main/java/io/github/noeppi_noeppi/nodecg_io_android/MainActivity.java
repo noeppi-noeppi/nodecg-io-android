@@ -3,16 +3,12 @@ package io.github.noeppi_noeppi.nodecg_io_android;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentFilter;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentProvider;
-import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
 import org.json.JSONException;
 import org.json.JSONObject;
 

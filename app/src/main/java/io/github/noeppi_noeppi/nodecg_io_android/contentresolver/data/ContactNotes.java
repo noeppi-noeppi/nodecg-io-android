@@ -1,26 +1,29 @@
 package io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data;
 
-import android.provider.BaseColumns;
+import android.provider.ContactsContract;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
 import io.github.noeppi_noeppi.nodecg_io_android.util.ToJSON;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.annotation.Nullable;
+
 @DataClass
-public class Recipient implements ToJSON {
+public class ContactNotes implements ToJSON {
 
-    @Mapping(BaseColumns._ID)
-    public long _id;
-    
-    // Might be a phone number or a name.
-    @Mapping("address")
-    public String address;
+    @Nullable
+    @Mapping(ContactsContract.CommonDataKinds.Note.NOTE)
+    public String text;
 
+    @Nullable
+    @Override
     public JSONObject toJSON() throws JSONException {
+        if (this.text == null) {
+            return null;
+        }
         JSONObject json = new JSONObject();
-        json.put("id", this._id);
-        json.put("address", this.address);
+        json.put("text", this.text);
         return json;
     }
 }

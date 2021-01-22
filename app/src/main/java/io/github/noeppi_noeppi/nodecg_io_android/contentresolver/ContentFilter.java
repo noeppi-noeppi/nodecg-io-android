@@ -31,6 +31,8 @@ public class ContentFilter<T> {
     public static final ContentFilter<Pair<AppliedFilter<?>, AppliedFilter<?>>> OR = new ContentFilter<>(createCompoundFilter("OR"));
     
     public static final ContentFilter<Long> BY_ID = new ContentFilter<>((t, v) -> BaseColumns._ID + " = " + v);
+    public static final ContentFilter<Pair<String, String>> KEY_VALUE = new ContentFilter<>((t, v) -> v.getKey() + " = \"" + quote(v.getValue()) + "\"");
+    
     public static final ContentFilter<Collection<Long>> BY_IDS = new ContentFilter<>((t, v) -> BaseColumns._ID + " IN " + v.stream().map(l -> Long.toString(l)).collect(Collectors.joining(",", "(", ")")));
     public static final ContentFilter<SubscriptionInfo> SUBSCRIPTION = new ContentFilter<>((t, v) -> {
         if (t.resultClass == Sms.class) {
@@ -51,8 +53,17 @@ public class ContentFilter<T> {
         }
     }, SMS_ALL, SMS_INBOX, SMS_OUTBOX, SMS_SENT, SMS_DRAFT, MMS_ALL, MMS_INBOX, MMS_OUTBOX, MMS_SENT, MMS_DRAFT);
     
-    public static final ContentFilter<String> CONTACTS_MIME = new ContentFilter<>((t, v) -> ContactsContract.Data.MIMETYPE + " = \"" + quote(v) + "\"", CONTACT_NAME);
-    public static final ContentFilter<Long> BY_CONTACTS_RAW_ID = new ContentFilter<>((t, v) -> ContactsContract.Data.RAW_CONTACT_ID + " = " + v, CONTACT_NAME);
+    public static final ContentFilter<Pair<String, String>> CONTACTS_RAW_ACCOUNT = new ContentFilter<>((t, v) ->
+            ContactsContract.RawContacts.ACCOUNT_TYPE + " = \"" + quote(v.getLeft()) + "\" AND "
+                    + ContactsContract.RawContacts.ACCOUNT_NAME + " = \"" + quote(v.getRight()) + "\"",
+            CONTACT_RAW_ID);
+    public static final ContentFilter<Long> BY_CONTACTS_ID = new ContentFilter<>((t, v) -> ContactsContract.RawContacts.CONTACT_ID + " = " + v,
+            CONTACT_RAW_ID);
+    
+    public static final ContentFilter<String> CONTACTS_DATA_MIME = new ContentFilter<>((t, v) -> ContactsContract.Data.MIMETYPE + " = \"" + quote(v) + "\"",
+            CONTACT_ID_FROM_DATA, CONTACT_NAME, CONTACT_PHONE, CONTACT_EMAIL, CONTACT_EVENT, CONTACT_NICKNAME, CONTACT_NOTES, CONTACT_ADDRESS);
+    public static final ContentFilter<Long> BY_CONTACTS_RAW_ID = new ContentFilter<>((t, v) -> ContactsContract.Data.RAW_CONTACT_ID + " = " + v,
+            CONTACT_ID_FROM_DATA, CONTACT_NAME, CONTACT_PHONE, CONTACT_EMAIL, CONTACT_EVENT, CONTACT_NICKNAME, CONTACT_NOTES, CONTACT_ADDRESS);
     
     
     // Null: Can be used on any content type
@@ -67,7 +78,7 @@ public class ContentFilter<T> {
     
     public String createFor(ContentType<?> type, T t) {
         if (this.availableTypes != null && !this.availableTypes.contains(type)) {
-            throw new IllegalArgumentException("Failed to build filter: This filter is not available for the given content type.");
+            throw new IllegalArgumentException("Failed to build filter: This filter is not available for the given content type: " + type.resultClass.getSimpleName());
         }
         return this.factory.apply(type, t);
     }
@@ -94,7 +105,7 @@ public class ContentFilter<T> {
         return str.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    public static <T> AppliedFilter<?> not(AppliedFilter<?> filter) {
+    public static AppliedFilter<?> not(AppliedFilter<?> filter) {
         return NOT.apply(filter);
     }
     
@@ -102,35 +113,51 @@ public class ContentFilter<T> {
         return NOT.apply(filter.apply(t));
     }
     
-    public static <T, U> AppliedFilter<?> and(AppliedFilter<?> filter1, AppliedFilter<?> filter2) {
-        return AND.apply(Pair.of(filter1, filter2));
+    public static AppliedFilter<?> and(AppliedFilter<?> filter1, AppliedFilter<?> filter2) {
+        if (filter1.filter == NOTHING || filter2.filter == NOTHING) {
+            return NOTHING.apply(null);
+        } else if (filter1.filter == EVERYTHING) {
+            return filter2;
+        } else if (filter2.filter == EVERYTHING){
+            return filter1;
+        } else {
+            return AND.apply(Pair.of(filter1, filter2));
+        }
     }
 
-    public static <T, U> AppliedFilter<?> and(ContentFilter<T> filter1, T t, AppliedFilter<?> filter2) {
-        return AND.apply(Pair.of(filter1.apply(t), filter2));
+    public static <T> AppliedFilter<?> and(ContentFilter<T> filter1, T t, AppliedFilter<?> filter2) {
+        return and(filter1.apply(t), filter2);
     }
 
-    public static <T, U> AppliedFilter<?> and(AppliedFilter<?> filter1, ContentFilter<U> filter2, U u) {
-        return AND.apply(Pair.of(filter1, filter2.apply(u)));
+    public static <U> AppliedFilter<?> and(AppliedFilter<?> filter1, ContentFilter<U> filter2, U u) {
+        return and(filter1, filter2.apply(u));
     }
 
     public static <T, U> AppliedFilter<?> and(ContentFilter<T> filter1, T t, ContentFilter<U> filter2, U u) {
-        return AND.apply(Pair.of(filter1.apply(t), filter2.apply(u)));
+        return and(filter1.apply(t), filter2.apply(u));
     }
     
-    public static <T, U> AppliedFilter<?> or(AppliedFilter<?> filter1, AppliedFilter<?> filter2) {
-        return OR.apply(Pair.of(filter1, filter2));
+    public static AppliedFilter<?> or(AppliedFilter<?> filter1, AppliedFilter<?> filter2) {
+        if (filter1.filter == EVERYTHING || filter2.filter == EVERYTHING) {
+            return EVERYTHING.apply(null);
+        } else if (filter1.filter == NOTHING) {
+            return filter2;
+        } else if (filter2.filter == NOTHING) {
+            return filter1;
+        } else {
+            return OR.apply(Pair.of(filter1, filter2));
+        }
     }
 
-    public static <T, U> AppliedFilter<?> or(ContentFilter<T> filter1, T t, AppliedFilter<?> filter2) {
-        return OR.apply(Pair.of(filter1.apply(t), filter2));
+    public static <T> AppliedFilter<?> or(ContentFilter<T> filter1, T t, AppliedFilter<?> filter2) {
+        return or(filter1.apply(t), filter2);
     }
 
-    public static <T, U> AppliedFilter<?> or(AppliedFilter<?> filter1, ContentFilter<U> filter2, U u) {
-        return OR.apply(Pair.of(filter1, filter2.apply(u)));
+    public static <U> AppliedFilter<?> or(AppliedFilter<?> filter1, ContentFilter<U> filter2, U u) {
+        return or(filter1, filter2.apply(u));
     }
 
     public static <T, U> AppliedFilter<?> or(ContentFilter<T> filter1, T t, ContentFilter<U> filter2, U u) {
-        return OR.apply(Pair.of(filter1.apply(t), filter2.apply(u)));
+        return or(filter1.apply(t), filter2.apply(u));
     }
 }

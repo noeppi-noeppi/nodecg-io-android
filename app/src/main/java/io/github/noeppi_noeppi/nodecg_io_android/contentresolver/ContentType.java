@@ -35,8 +35,16 @@ public class ContentType<T> {
     
     public static final ContentType<Contact> CONTACT = new ContentType<>(ContactsContract.Contacts.CONTENT_URI, ContentFactory.CONTACT);
     public static final ContentType<ContactStatus> CONTACT_STATUS = new ContentType<>(ContactsContract.Contacts.CONTENT_URI, ContentFactory.CONTACT_STATUS);
+    public static final ContentType<Long> CONTACT_RAW_ID = new ContentType<>(ContactsContract.RawContacts.CONTENT_URI, ContentFactory.ID);
+    public static final ContentType<Long> CONTACT_ID_FROM_DATA = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_ID_FROM_DATA);
     public static final ContentType<ContactName> CONTACT_NAME = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_NAME);
-
+    public static final ContentType<ContactPhone> CONTACT_PHONE = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_PHONE);
+    public static final ContentType<ContactEmail> CONTACT_EMAIL = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_EMAIL);
+    public static final ContentType<ContactEvent> CONTACT_EVENT = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_EVENT);
+    public static final ContentType<ContactNickname> CONTACT_NICKNAME = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_NICKNAME);
+    public static final ContentType<ContactNotes> CONTACT_NOTES = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_NOTES);
+    public static final ContentType<ContactAddress> CONTACT_ADDRESS = new ContentType<>(ContactsContract.Data.CONTENT_URI, ContentFactory.CONTACT_ADDRESS);
+    
     public final Class<T> resultClass;
 
     // This needs to be a list because some URIs don't work everywhere and you need ti use a different...

@@ -534,19 +534,44 @@ public class Actions {
         }
         feedback.sendFeedback("status", status.toJSON());
     }
-
-    public static void contactName(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+    
+    public static void findContact(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.CONTACTS);
+        ContactDataGroup<?> group = ContactDataGroup.byId(data.getString("dataId"));
+        if (group == null) {
+            throw new FailureException("Unknown contact data id: " + data.getString("dataId"));
+        }
+        List<Contact> matches = group.findContacts(ctx, data.getString("value"));
+        if (matches.isEmpty()) {
+            feedback.sendFeedback(new JSONObject());
+        } else {
+            feedback.sendFeedback("contact_id", matches.stream().min(Comparator.comparingLong(c -> c._id)).get().toJSON());
+        }
+    }
+    
+    public static void findContacts(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        Permissions.ensure(ctx, Permission.CONTACTS);
+        ContactDataGroup<?> group = ContactDataGroup.byId(data.getString("dataId"));
+        if (group == null) {
+            throw new FailureException("Unknown contact data id: " + data.getString("dataId"));
+        }
+        List<Contact> matches = group.findContacts(ctx, data.getString("value"));
+        JSONArray array = new JSONArray();
+        for (Contact contact : matches) {
+            array.put(contact.toJSON());
+        }
+        feedback.sendFeedback("contact_ids", array);
+    }
+    
+    public static void getContactData(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         Permissions.ensure(ctx, Permission.CONTACTS);
         long contactId = data.getLong("id");
-        Contact contact = new ContentProvider<>(ctx, ContentType.CONTACT).query(ContentFilter.BY_ID, contactId).head();
-        if (contact == null) {
-            throw new FailureException("No contact found with id " + contactId);
+        ContactDataGroup<?> group = ContactDataGroup.byId(data.getString("dataId"));
+        if (group == null) {
+            throw new FailureException("Unknown contact data id: " + data.getString("dataId"));
         }
-        long nameId = contact.nameInfoId;
-        ContactName name = new ContentProvider<>(ctx, ContentType.CONTACT_NAME).query(ContentFilter.and(ContentFilter.BY_CONTACTS_RAW_ID, nameId, ContentFilter.CONTACTS_MIME, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)).head();
-        if (name == null) {
-            throw new FailureException("No contact name found with id " + nameId + " (" + contactId + ")");
-        }
-        feedback.sendFeedback("name", name.toJSON());
+        Pair<String, String> account = Helper.getContactDataAccount(data);
+        OptionalLong rawContactId = ContactDataGroup.getRawContactId(ctx, contactId, account);
+        group.sendResult(ctx, rawContactId, feedback);
     }
 }

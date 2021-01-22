@@ -4,13 +4,14 @@ import android.provider.ContactsContract;
 import io.github.noeppi_noeppi.nodecg_io_android.Helper;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
+import io.github.noeppi_noeppi.nodecg_io_android.util.ToJSON;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
 
 @DataClass
-public class ContactStatus {
+public class ContactStatus implements ToJSON {
 
     @Mapping(ContactsContract.Contacts.CONTACT_PRESENCE)
     public int presenceId = ContactsContract.StatusUpdates.OFFLINE;

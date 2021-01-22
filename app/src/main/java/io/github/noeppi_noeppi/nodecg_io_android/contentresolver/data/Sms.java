@@ -4,13 +4,14 @@ import android.provider.BaseColumns;
 import android.provider.Telephony;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.DataClass;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.mapping.Mapping;
+import io.github.noeppi_noeppi.nodecg_io_android.util.ToJSON;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
 
 @DataClass
-public class Sms {
+public class Sms implements ToJSON {
 
     @Mapping(BaseColumns._ID)
     public long _id;

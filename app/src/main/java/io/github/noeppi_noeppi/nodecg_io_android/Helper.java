@@ -20,6 +20,7 @@ import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentFilter;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.ContentType;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Mms;
 import io.github.noeppi_noeppi.nodecg_io_android.contentresolver.data.Sms;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -337,6 +338,79 @@ public class Helper {
             case ContactsContract.FullNameStyle.JAPANESE: return "japanese";
             case ContactsContract.FullNameStyle.KOREAN: return "korean";
             default: return "unset";
+        }
+    }
+    
+    public static Pair<String, String> getContactDataAccount(JSONObject data) throws JSONException {
+        JSONArray contactAccount = data.getJSONArray("contact_account");
+        if (contactAccount.length() != 2) {
+            throw new JSONException("Expected an array size of 2, got " + contactAccount.length());
+        }
+        return Pair.of(contactAccount.getString(0), contactAccount.getString(1));
+    }
+
+    public static String getPhoneNumberType(int type) {
+        switch (type) {
+            case ContactsContract.CommonDataKinds.Phone.TYPE_HOME: return "home";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE: return "mobile";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_WORK: return "work";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK: return "fax_work";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME: return "fax_home";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_PAGER: return "pager";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER: return "other";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_CALLBACK: return "callback";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_CAR: return "car";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_COMPANY_MAIN: return "company_main";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_ISDN: return "isdn";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_MAIN: return "main";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER_FAX: return "other_fax";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_RADIO: return "radio";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_TELEX: return "telex";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_TTY_TDD: return "tty_tdd";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_WORK_MOBILE: return "work_mobile";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_WORK_PAGER: return "work_pager";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_ASSISTANT: return "assistant";
+            case ContactsContract.CommonDataKinds.Phone.TYPE_MMS: return "mms";
+            default: return "other";
+        }
+    }
+
+    public static String getContactEmailType(int type) {
+        switch (type) {
+            case ContactsContract.CommonDataKinds.Email.TYPE_HOME: return "home";
+            case ContactsContract.CommonDataKinds.Email.TYPE_MOBILE: return "mobile";
+            case ContactsContract.CommonDataKinds.Email.TYPE_WORK: return "work";
+            case ContactsContract.CommonDataKinds.Email.TYPE_OTHER: return "other";
+            default: return "other";
+        }
+    }
+
+    public static String getContactEventType(int type) {
+        switch (type) {
+            case ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY: return "birthday";
+            case ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY: return "anniversary";
+            case ContactsContract.CommonDataKinds.Event.TYPE_OTHER: return "other";
+            default: return "other";
+        }
+    }
+
+    public static String getContactNicknameType(int type) {
+        switch (type) {
+            case ContactsContract.CommonDataKinds.Nickname.TYPE_DEFAULT: return "default";
+            case ContactsContract.CommonDataKinds.Nickname.TYPE_OTHER_NAME: return "other";
+            case ContactsContract.CommonDataKinds.Nickname.TYPE_MAIDEN_NAME: return "maiden_name";
+            case ContactsContract.CommonDataKinds.Nickname.TYPE_SHORT_NAME: return "short_name";
+            case ContactsContract.CommonDataKinds.Nickname.TYPE_INITIALS: return "initials";
+            default: return "other";
+        }
+    }
+
+    public static String getContactAddressType(int type) {
+        switch (type) {
+            case ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME: return "home";
+            case ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK: return "work";
+            case ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER: return "other";
+            default: return "other";
         }
     }
 }

@@ -56,7 +56,9 @@ public class Receiver extends BroadcastReceiver {
             .put("send_sms", Actions::sendSMS)
             .put("get_all_contacts", Actions::getAllContacts)
             .put("contact_status", Actions::contactStatus)
-            .put("contact_name", Actions::contactName)
+            .put("find_contact", Actions::findContact)
+            .put("find_contacts", Actions::findContacts)
+            .put("get_contact_data", Actions::getContactData)
             .build();
 
     @Override
