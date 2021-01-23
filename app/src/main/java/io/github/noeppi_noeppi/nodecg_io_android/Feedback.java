@@ -8,8 +8,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.annotation.Nullable;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -335,12 +333,17 @@ public class Feedback {
         return intent;
     }
     
+    // Checks whether te intent has a Feedback attached.
+    public static boolean has(Intent intent) {
+        int[] data = intent.getIntArrayExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
+        return data != null && data.length == 2;
+    }
+    
     // Gets a feedback from an intent. Can only be used once.
-    @Nullable
     public static Feedback get(Intent intent) {
         int[] data = intent.getIntArrayExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
         if (data == null || data.length != 2) {
-            return null;
+            throw new IllegalStateException("Can't get feedback from intent with no feedback attached.");
         }
         intent.removeExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
         return new Feedback(data[0], data[1]);

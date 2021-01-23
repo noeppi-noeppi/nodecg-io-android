@@ -12,6 +12,7 @@ import java.util.List;
 public enum AvailableObject {
     
     TELEPHONY("system", "telephony", ctx -> ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY)),
+    WIFI("system", "wifi", ctx -> ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI)),
     GPS("sensor", "gps", ctx -> {
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
         if (mgr != null) {

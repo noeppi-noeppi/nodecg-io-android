@@ -2,7 +2,9 @@ package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -28,9 +30,38 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class Helper {
+    
+    public static void runTaskWithActivity(Context ctx, String reason, Feedback feedback, Consumer<Intent> intentModifier) throws FailureException, JSONException {
+        Intent intent = new Intent(ctx, MainActivity.class);
+        intentModifier.accept(intent);
+        Feedback.attach(intent, feedback);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
+        // Very weird but it seems to only work this way...
+        PendingIntent pi = PendingIntent.getActivity(ctx, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        try {
+            pi.send(ctx, 0, intent);
+            Receiver.logger.info("Starting activity task: " + reason);
+        } catch (PendingIntent.CanceledException e) {
+            Receiver.logger.warning("Could not launch activity (" + reason + "): " + e.getMessage());
+            e.printStackTrace();
+            JSONObject json = new JSONObject();
+            json.put("success", false);
+            json.put("errmsg", "Could not launch activity: " + e.getMessage());
+            // We can not send the feedback with the original feedback object as it is now invalid
+            // after being attached to the intent.
+            Feedback newFeedback = Feedback.get(intent);
+            newFeedback.sendFeedback(json);
+        }
+    }
+    
     public static int getAudioStream(JSONObject msg) throws JSONException {
         String channel = msg.getString("channel").toLowerCase();
         switch (channel) {
@@ -428,12 +459,27 @@ public class Helper {
     }
     
     public static String getWifiConnectionStandard(int wifiStandard) {
-        switch (wifiStandard) {
-            case ScanResult.WIFI_STANDARD_LEGACY: return "ieee80211abg";
-            case ScanResult.WIFI_STANDARD_11N: return "ieee80211n";
-            case ScanResult.WIFI_STANDARD_11AC: return "ieee80211ac";
-            case ScanResult.WIFI_STANDARD_11AX: return "ieee80211ax";
-            case ScanResult.WIFI_STANDARD_UNKNOWN: return "unknown";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            switch (wifiStandard) {
+                case ScanResult.WIFI_STANDARD_LEGACY: return "ieee80211abg";
+                case ScanResult.WIFI_STANDARD_11N: return "ieee80211n";
+                case ScanResult.WIFI_STANDARD_11AC: return "ieee80211ac";
+                case ScanResult.WIFI_STANDARD_11AX: return "ieee80211ax";
+                case ScanResult.WIFI_STANDARD_UNKNOWN: return "unknown";
+                default: return "unknown";
+            }
+        } else {
+            return "unknown";
+        }
+    }
+    
+    public static String getWifiChannelBandwidth(int bandwidth) {
+        switch (bandwidth) {
+            case ScanResult.CHANNEL_WIDTH_20MHZ: return "20MHz";
+            case ScanResult.CHANNEL_WIDTH_40MHZ: return "40Mhz";
+            case ScanResult.CHANNEL_WIDTH_80MHZ: return "80Mhz";
+            case ScanResult.CHANNEL_WIDTH_160MHZ: return "160Mhz";
+            case ScanResult.CHANNEL_WIDTH_80MHZ_PLUS_MHZ: return "80MHz+";
             default: return "unknown";
         }
     }

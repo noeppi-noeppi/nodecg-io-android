@@ -4,8 +4,10 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -18,9 +20,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.AudioManager;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
+import android.net.*;
+import android.net.wifi.*;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -58,16 +59,16 @@ public class Actions {
 
     public static void requestPermissions(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         JSONArray permissionsArray = data.getJSONArray("permissions");
-        Set<String> permissions = new HashSet<>();
+        Set<String> permissionCollect = new HashSet<>();
         for (int i = 0; i < permissionsArray.length(); i++) {
             String permissionStr = permissionsArray.getString(i).toLowerCase();
             for (Permission permission : Permission.values()) {
                 if (permission.id.equals(permissionStr)) {
-                    permissions.addAll(permission.perms);
+                    permissionCollect.addAll(permission.perms);
                 }
             }
         }
-        permissions = permissions.stream().filter(perm -> ContextCompat.checkSelfPermission(ctx, perm) != PackageManager.PERMISSION_GRANTED).collect(Collectors.toSet());
+        Set<String> permissions = permissionCollect.stream().filter(perm -> ContextCompat.checkSelfPermission(ctx, perm) != PackageManager.PERMISSION_GRANTED).collect(Collectors.toSet());
         if (permissions.isEmpty()) {
             feedback.sendFeedback("success", true);
             Receiver.logger.info("Requesting no permissions: all granted.");
@@ -77,28 +78,8 @@ public class Actions {
             json.put("errmsg", "nodecg-io-android has no SYSTEM ALERT WINDOW permission. STart the app and you'll be redirected to the settings page to grant that permission.");
             Receiver.logger.info("Failed to request runtime permissions: SYSTEM ALERT WINDOW permission not granted.");
         } else {
-            Intent intent = new Intent(ctx, MainActivity.class);
-            intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.REQUEST_PERMISSIONS", permissions.toArray(new String[]{}));
-            Feedback.attach(intent, feedback);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-
-            // Very weird but it seems to only work this way...
-            PendingIntent pi = PendingIntent.getActivity(ctx, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-            try {
-                pi.send(ctx, 0, intent);
-                Receiver.logger.info("Requesting permissions: " + String.join(", ", permissions));
-            } catch (PendingIntent.CanceledException e) {
-                Receiver.logger.warning("Could not launch activity: " + e.getMessage());
-                e.printStackTrace();
-                JSONObject json = new JSONObject();
-                json.put("success", false);
-                json.put("errmsg", "Could not launch activity: " + e.getMessage());
-                feedback.sendFeedback(json);
-            }
+            Helper.runTaskWithActivity(ctx, "Request permissions: " + String.join(",", permissions), feedback,
+                    intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.REQUEST_PERMISSIONS", permissions.toArray(new String[]{})));
         }
     }
 
@@ -598,7 +579,6 @@ public class Actions {
     }
 
     public static void getWifiState(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
-        //Permissions.ensure(ctx, Permission.GPS);
         WifiManager mgr = ctx.getSystemService(WifiManager.class);
         JSONObject json = new JSONObject();
         json.put("device_state", Helper.getWifiDeviceState(mgr.getWifiState()));
@@ -608,6 +588,7 @@ public class Actions {
             json.put("ssid", connection.getSSID());
             json.put("bssid", connection.getBSSID());
             json.put("hidden_ssid", connection.getHiddenSSID());
+            json.put("standard", Helper.getWifiConnectionStandard(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? connection.getWifiStandard() : -1));
             json.put("ip", Helper.ipToString(connection.getIpAddress()));
             json.put("frequency", connection.getFrequency());
             if (connection.getLinkSpeed() != WifiInfo.LINK_SPEED_UNKNOWN) {
@@ -627,9 +608,103 @@ public class Actions {
                 //noinspection deprecation
                 json.put("signal_level", WifiManager.calculateSignalLevel(connection.getRssi(), 100) / (double) 100);
             }
+            if (connection.getPasspointFqdn() != null) {
+                json.put("passpoint", true);
+                json.put("passpoint_fqdn", connection.getPasspointFqdn());
+            } else {
+                json.put("passpoint", false);
+            }
         } else {
             json.put("connected", false);
         }
         feedback.sendFeedback("state", json);
+    }
+
+    public static void scanWifi(Context ctx, JSONObject data, Feedback feedback) throws FailureException {
+        WifiManager mgr = ctx.getSystemService(WifiManager.class);
+        Feedback delayed = Feedback.delay(feedback);
+        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                System.out.println("REC");
+                context.getApplicationContext().unregisterReceiver(this);
+                JSONArray array = new JSONArray();
+                List<ScanResult> scan = context.getSystemService(WifiManager.class).getScanResults();
+                try {
+                    for (ScanResult result : scan) {
+                        JSONObject json = new JSONObject();
+                        json.put("ssid", result.SSID);
+                        json.put("bssid", result.BSSID);
+                        json.put("standard", Helper.getWifiConnectionStandard(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? result.getWifiStandard() : -1));
+                        json.put("frequency", result.frequency);
+                        json.put("rssi", result.level);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            json.put("signal_level", mgr.calculateSignalLevel(result.level) / (double) mgr.getMaxSignalLevel());
+                        } else {
+                            //noinspection deprecation
+                            json.put("signal_level", WifiManager.calculateSignalLevel(result.level, 100) / (double) 100);
+                        }
+                        json.put("rtt", result.is80211mcResponder());
+                        json.put("passpoint", result.isPasspointNetwork());
+                        json.put("channel_width", Helper.getWifiChannelBandwidth(result.channelWidth));
+                        array.put(json);
+                    }
+                    delayed.sendFeedback("results", array);
+                } catch (FailureException | JSONException e) {
+                    delayed.sendError("Failed to send wifi scan results: " + e.getMessage());
+                }
+            }
+        };
+        ctx.getApplicationContext().registerReceiver(wifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        //noinspection deprecation
+        if (!mgr.startScan()) {
+            ctx.getApplicationContext().unregisterReceiver(wifiScanReceiver);
+            delayed.sendError("Failed to start wifi scan.");
+        }
+    }
+    
+    public static void requestWifiConnection(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            throw new FailureException("Wifi connection requesting requires Android 10.");
+        }
+        WifiManager mgr = ctx.getSystemService(WifiManager.class);
+        WifiNetworkSpecifier.Builder builder = new WifiNetworkSpecifier.Builder();
+        if (data.has("ssid")) {
+            builder.setSsid(data.getString("ssid"));
+        }
+        if (data.has("bssid") && data.has("bssid_mask")) {
+            builder.setBssidPattern(MacAddress.fromString(data.getString("bssid")),
+                    MacAddress.fromString(data.getString("bssid_mask")));
+        } else if (data.has("bssid")) {
+            builder.setBssid(MacAddress.fromString(data.getString("bssid")));
+        }
+        if (data.has("encryption")) {
+            JSONObject encryption = data.getJSONObject("encryption");
+            String type = encryption.getString("type");
+            if (type.equals("enhanced_open")) {
+                if (mgr.isEnhancedOpenSupported()) {
+                    throw new FailureException("This device does not support enhanced open.");
+                }
+                builder.setIsEnhancedOpen(true);
+            } else if (type.equals("wpa2")) {
+                builder.setWpa2Passphrase(encryption.getString("passphrase"));
+            } else if (type.equals("wpa3")) {
+                if (mgr.isWpa3SaeSupported()) {
+                    throw new FailureException("This device does not support WPA3.");
+                }
+                builder.setWpa2Passphrase(encryption.getString("passphrase"));
+            } else if (!type.equals("none")) {
+                throw new FailureException("Unknown wifi encryption: " + type);
+            }
+        }
+        NetworkSpecifier specifier = builder.build();
+        NetworkRequest request = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .setNetworkSpecifier(specifier)
+                .build();
+
+        Helper.runTaskWithActivity(ctx, "Request WiFi connection", feedback,
+                intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.NETWORK_CONNECTIVITY_REQUEST", request));
     }
 }
