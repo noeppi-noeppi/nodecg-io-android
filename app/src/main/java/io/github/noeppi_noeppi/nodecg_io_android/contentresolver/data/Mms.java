@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import java.util.Date;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class Mms implements ToJSON {
 
     @Mapping(BaseColumns._ID)
@@ -31,10 +32,10 @@ public class Mms implements ToJSON {
 
     @Mapping(Telephony.BaseMmsColumns.THREAD_ID)
     public long threadId = -1;
-    
+
     @Mapping(Telephony.BaseMmsColumns.READ)
     public boolean read;
-    
+
     @Mapping(Telephony.BaseMmsColumns.SEEN)
     public boolean seen;
 
@@ -47,14 +48,14 @@ public class Mms implements ToJSON {
     @Nullable
     @Mapping(Telephony.BaseMmsColumns.RETRIEVE_TEXT)
     public String retrieveText;
-    
+
     @Mapping(Telephony.BaseMmsColumns.CONTENT_TYPE)
     public String contentType = "unknown";
-    
+
     @Nullable
     @Mapping(Telephony.BaseMmsColumns.CONTENT_LOCATION)
     public String contentLocation;
-    
+
     @Nullable
     @Mapping(Telephony.BaseMmsColumns.EXPIRY)
     public Date expiry;

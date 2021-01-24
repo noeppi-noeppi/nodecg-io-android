@@ -8,11 +8,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class Recipient implements ToJSON {
 
     @Mapping(BaseColumns._ID)
     public long _id;
-    
+
     // Might be a phone number or a name.
     @Mapping("address")
     public String address;

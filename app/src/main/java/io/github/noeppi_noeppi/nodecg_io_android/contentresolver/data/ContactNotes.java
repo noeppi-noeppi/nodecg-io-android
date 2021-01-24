@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactNotes implements ToJSON {
 
     @Nullable

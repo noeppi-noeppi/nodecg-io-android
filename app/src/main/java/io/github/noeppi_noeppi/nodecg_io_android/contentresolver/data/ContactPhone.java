@@ -11,18 +11,19 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactPhone implements ToJSON {
 
     @Mapping(ContactsContract.CommonDataKinds.Phone.NUMBER)
     public String enteredNumber;
-    
+
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER)
     public String number;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.Phone.TYPE)
     public int type;
-    
+
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Phone.LABEL)
     public String type_label;

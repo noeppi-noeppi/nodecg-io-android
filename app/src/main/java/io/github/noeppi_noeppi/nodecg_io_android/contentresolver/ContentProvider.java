@@ -17,7 +17,7 @@ public class ContentProvider<T> {
     private final ContentResolver resolver;
     private final Set<ContentObserver> registeredObservers;
     private final Uri queryURI;
-    
+
     public ContentProvider(Context ctx, ContentType<T> type) {
         this.ctx = ctx;
         this.type = type;
@@ -39,17 +39,17 @@ public class ContentProvider<T> {
             this.queryURI = uriToUse;
         }
     }
-    
+
     public void addObserver(ContentObserver observer, boolean notifyForDescendants) {
         this.resolver.registerContentObserver(this.queryURI, notifyForDescendants, observer);
         this.registeredObservers.add(observer);
     }
-    
+
     public void removeObserver(ContentObserver observer) {
         this.resolver.unregisterContentObserver(observer);
         this.registeredObservers.remove(observer);
     }
-    
+
     public void finish() {
         this.registeredObservers.forEach(this.resolver::unregisterContentObserver);
         this.registeredObservers.clear();
@@ -58,11 +58,11 @@ public class ContentProvider<T> {
     public ResultSet<T> query() {
         return this.query(ContentFilter.EVERYTHING, null);
     }
-    
+
     public <F> ResultSet<T> query(AppliedFilter<F> filter) {
         return this.query(filter.getLeft(), filter.getRight());
     }
-    
+
     public <F> ResultSet<T> query(ContentFilter<F> filter, F value) {
         Cursor cursor = this.resolver.query(this.queryURI, this.type.projection.toArray(new String[]{}), filter.createFor(this.type, value), null, null);
         return new ResultSet<>(this.type, cursor);

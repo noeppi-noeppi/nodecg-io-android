@@ -11,16 +11,17 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactEmail implements ToJSON {
-    
+
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Email.ADDRESS)
     public String address;
-    
+
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Email.DISPLAY_NAME)
     public String display_name;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.Email.TYPE)
     public int type;
 

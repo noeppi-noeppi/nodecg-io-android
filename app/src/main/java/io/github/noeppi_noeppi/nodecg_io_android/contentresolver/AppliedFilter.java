@@ -26,7 +26,7 @@ public class AppliedFilter<T> extends Pair<ContentFilter<T>, T> {
     public T setValue(T value) {
         throw new UnsupportedOperationException();
     }
-    
+
     public String createFor(ContentType<?> type) {
         return this.filter.createFor(type, this.value);
     }

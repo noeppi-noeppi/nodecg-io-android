@@ -16,14 +16,14 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 public class ContentFactory<T> {
-    
+
     @SuppressWarnings("ConstantConditions")
     public static final ContentFactory<Long> ID = new ContentFactory<>(Long.class, (c, m) -> c.getLong(m.get(BaseColumns._ID)), BaseColumns._ID);
     public static final ContentFactory<Sms> SMS = createFrom(Sms.class);
     public static final ContentFactory<Mms> MMS = createFrom(Mms.class);
     public static final ContentFactory<MessageThread> MESSAGE_THREAD = createFrom(MessageThread.class);
     public static final ContentFactory<Recipient> RECIPIENT = createFrom(Recipient.class);
-    
+
     public static final ContentFactory<Contact> CONTACT = createFrom(Contact.class);
     @SuppressWarnings("ConstantConditions")
     public static final ContentFactory<Long> CONTACT_ID_FROM_DATA = new ContentFactory<>(Long.class, (c, m) -> c.getLong(m.get(ContactsContract.Data.CONTACT_ID)), ContactsContract.Data.CONTACT_ID);
@@ -35,7 +35,7 @@ public class ContentFactory<T> {
     public static final ContentFactory<ContactNickname> CONTACT_NICKNAME = createFrom(ContactNickname.class);
     public static final ContentFactory<ContactNotes> CONTACT_NOTES = createFrom(ContactNotes.class);
     public static final ContentFactory<ContactAddress> CONTACT_ADDRESS = createFrom(ContactAddress.class);
-    
+
     public final Class<T> resultClass;
     public final List<String> projection;
     private final BiFunction<Cursor, Map<String, Integer>, T> factory;

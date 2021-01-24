@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.util.Date;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactStatus implements ToJSON {
 
     @Mapping(ContactsContract.Contacts.CONTACT_PRESENCE)

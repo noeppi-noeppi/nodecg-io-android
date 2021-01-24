@@ -10,11 +10,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactName implements ToJSON {
-    
+
     @Mapping(BaseColumns._ID)
     public long _id;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME)
     public String displayName;
 
@@ -32,13 +33,13 @@ public class ContactName implements ToJSON {
 
     @Mapping(ContactsContract.CommonDataKinds.StructuredName.SUFFIX)
     public String suffix;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.StructuredName.FULL_NAME_STYLE)
     public int nameStyle;
-    
+
     public JSONObject toJSON() throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("display_name", this.displayName == null ? ""  : this.displayName);
+        json.put("display_name", this.displayName == null ? "" : this.displayName);
         if (this.givenName != null) json.put("given_name", this.givenName);
         if (this.familiyName != null) json.put("family_name", this.familiyName);
         if (this.prefix != null) json.put("prefix", this.prefix);

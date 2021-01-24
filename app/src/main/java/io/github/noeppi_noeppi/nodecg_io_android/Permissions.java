@@ -8,13 +8,19 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Permissions {
-    
+
     public static void ensure(Context ctx, Permission... permissions) throws FailureException {
         Set<String> noPerm = new HashSet<>();
         for (Permission permission : permissions) {
-            for (String perm : permission.perms) {
-                if (ContextCompat.checkSelfPermission(ctx, perm) != PackageManager.PERMISSION_GRANTED) { 
+            if (permission.special != null) {
+                if (!permission.special.apply(ctx)) {
                     noPerm.add(permission.id);
+                }
+            } else {
+                for (String perm : permission.perms) {
+                    if (ContextCompat.checkSelfPermission(ctx, perm) != PackageManager.PERMISSION_GRANTED) {
+                        noPerm.add(permission.id);
+                    }
                 }
             }
         }

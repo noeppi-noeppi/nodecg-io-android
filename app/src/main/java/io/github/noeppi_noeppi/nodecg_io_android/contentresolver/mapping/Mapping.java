@@ -6,7 +6,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Mapping {
-    
+
     String value();
+
     MapType map() default MapType.AUTO;
 }

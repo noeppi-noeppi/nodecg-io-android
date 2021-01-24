@@ -4,6 +4,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public interface ToJSON {
-    
+
     JSONObject toJSON() throws JSONException;
 }

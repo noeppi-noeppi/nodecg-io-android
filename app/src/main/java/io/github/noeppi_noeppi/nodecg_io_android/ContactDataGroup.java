@@ -16,12 +16,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.OptionalLong;
 
 public class ContactDataGroup<T extends ToJSON> {
-    
+
     private static final Map<String, ContactDataGroup<?>> groups = new HashMap<>();
-    
+
     public static final ContactDataGroup<ContactName> NAME = new ContactDataGroup<>("name", ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE, ContentType.CONTACT_NAME, true, ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME);
     public static final ContactDataGroup<ContactPhone> PHONE = new ContactDataGroup<>("phone", ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE, ContentType.CONTACT_PHONE, false, ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER);
     public static final ContactDataGroup<ContactEmail> EMAIL = new ContactDataGroup<>("email", ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE, ContentType.CONTACT_EMAIL, false, ContactsContract.CommonDataKinds.Email.ADDRESS, ContactsContract.CommonDataKinds.Email.DISPLAY_NAME);
@@ -29,7 +32,7 @@ public class ContactDataGroup<T extends ToJSON> {
     public static final ContactDataGroup<ContactNickname> NICKNAME = new ContactDataGroup<>("nickname", ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE, ContentType.CONTACT_NICKNAME, false, ContactsContract.CommonDataKinds.Nickname.NAME);
     public static final ContactDataGroup<ContactNotes> NOTES = new ContactDataGroup<>("notes", ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE, ContentType.CONTACT_NOTES, true);
     public static final ContactDataGroup<ContactAddress> ADDRESS = new ContactDataGroup<>("address", ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE, ContentType.CONTACT_ADDRESS, false, ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, ContactsContract.CommonDataKinds.StructuredPostal.STREET, ContactsContract.CommonDataKinds.StructuredPostal.POBOX, ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE, ContactsContract.CommonDataKinds.StructuredPostal.CITY);
-    
+
     public final String mime;
     public final List<String> searchColumns;
     public final ContentType<T> content;
@@ -42,7 +45,7 @@ public class ContactDataGroup<T extends ToJSON> {
         this.singleton = singleton;
         groups.put(id, this);
     }
-    
+
     public void sendResult(Context ctx, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") OptionalLong rawId, Feedback feedback) throws JSONException, FailureException {
         if (!rawId.isPresent()) {
             if (this.singleton) {
@@ -78,7 +81,7 @@ public class ContactDataGroup<T extends ToJSON> {
             }
         }
     }
-    
+
     public List<Contact> findContacts(Context ctx, String value) {
         if (this.searchColumns.isEmpty()) {
             return ImmutableList.of();
@@ -94,7 +97,7 @@ public class ContactDataGroup<T extends ToJSON> {
         List<Long> resultSet = new ContentProvider<>(ctx, ContentType.CONTACT_ID_FROM_DATA).query(filter).getDataList();
         return new ContentProvider<>(ctx, ContentType.CONTACT).query(ContentFilter.BY_IDS, ImmutableSet.copyOf(resultSet)).getDataList();
     }
-    
+
     public static OptionalLong getRawContactId(Context ctx, long contactId, Pair<String, String> rawContactAccount) {
         Long rawId = new ContentProvider<>(ctx, ContentType.CONTACT_RAW_ID).query(ContentFilter.and(
                 ContentFilter.BY_CONTACTS_ID, contactId,
@@ -106,7 +109,7 @@ public class ContactDataGroup<T extends ToJSON> {
             return OptionalLong.of(rawId);
         }
     }
-    
+
     @Nullable
     public static ContactDataGroup<?> byId(String id) {
         return groups.get(id);

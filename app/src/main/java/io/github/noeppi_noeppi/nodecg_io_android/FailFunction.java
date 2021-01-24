@@ -18,12 +18,12 @@ public interface FailFunction<T, R> {
         Objects.requireNonNull(before);
         return (V v) -> this.apply(before.apply(v));
     }
-    
+
     default <V> FailFunction<T, V> andThen(Function<? super R, ? extends V> after) {
         Objects.requireNonNull(after);
         return (T t) -> after.apply(this.apply(t));
     }
-    
+
     default <V> FailFunction<T, V> andThen(FailFunction<? super R, ? extends V> after) {
         Objects.requireNonNull(after);
         return (T t) -> after.apply(this.apply(t));

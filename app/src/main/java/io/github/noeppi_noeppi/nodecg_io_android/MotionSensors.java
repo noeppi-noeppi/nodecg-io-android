@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MotionSensors {
-    
+
     public static void sendMotionSensorFeedback(SensorManager mgr, Feedback feedback) {
         Sensor accelerometer = mgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         Sensor accelerometer_u = mgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER_UNCALIBRATED);
@@ -33,17 +33,17 @@ public class MotionSensors {
                     mgr.unregisterListener(this, event.sensor);
                     if (event.sensor == accelerometer) {
                         addSensorData(json, event, Sensor.TYPE_ACCELEROMETER);
-                    } else if (event.sensor == accelerometer_u) { 
+                    } else if (event.sensor == accelerometer_u) {
                         addSensorData(json, event, Sensor.TYPE_ACCELEROMETER_UNCALIBRATED);
-                    } else if (event.sensor == gravity) { 
+                    } else if (event.sensor == gravity) {
                         addSensorData(json, event, Sensor.TYPE_GRAVITY);
-                    } else if (event.sensor == gyroscope) { 
+                    } else if (event.sensor == gyroscope) {
                         addSensorData(json, event, Sensor.TYPE_GYROSCOPE);
-                    } else if (event.sensor == gyroscope_u) { 
+                    } else if (event.sensor == gyroscope_u) {
                         addSensorData(json, event, Sensor.TYPE_GYROSCOPE_UNCALIBRATED);
                     } else if (event.sensor == lin_acceleration) {
                         addSensorData(json, event, Sensor.TYPE_LINEAR_ACCELERATION);
-                    } else if (event.sensor == rotation) { 
+                    } else if (event.sensor == rotation) {
                         addSensorData(json, event, Sensor.TYPE_ROTATION_VECTOR);
                     }
                     if (valuesLeft.isEmpty()) {
@@ -60,7 +60,7 @@ public class MotionSensors {
 
             }
         };
-        
+
         valuesLeft.add(accelerometer);
         valuesLeft.add(accelerometer_u);
         valuesLeft.add(gravity);
@@ -68,7 +68,7 @@ public class MotionSensors {
         valuesLeft.add(gyroscope_u);
         valuesLeft.add(lin_acceleration);
         valuesLeft.add(rotation);
-        
+
         mgr.registerListener(listener, accelerometer, 0);
         mgr.registerListener(listener, accelerometer_u, 0);
         mgr.registerListener(listener, gravity, 0);
@@ -77,7 +77,7 @@ public class MotionSensors {
         mgr.registerListener(listener, lin_acceleration, 0);
         mgr.registerListener(listener, rotation, 0);
     }
-    
+
     public static void addSensorData(JSONObject json, SensorEvent event, int sensorId) throws JSONException {
         if (sensorId == Sensor.TYPE_ACCELEROMETER) {
             json.put("x", event.values[0]);

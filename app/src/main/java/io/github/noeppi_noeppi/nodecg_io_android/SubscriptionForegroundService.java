@@ -1,7 +1,6 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
 import android.app.*;
-import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import androidx.annotation.Nullable;
@@ -19,7 +18,7 @@ public class SubscriptionForegroundService extends Service {
         channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
         NotificationManager mgr = this.getSystemService(NotificationManager.class);
         mgr.createNotificationChannel(channel);
-        
+
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 

@@ -12,31 +12,32 @@ import javax.annotation.Nullable;
 import java.util.Date;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class MessageThread implements ToJSON {
 
     @Mapping(BaseColumns._ID)
     public long _id;
-    
+
     @Nullable
     @Mapping(Telephony.ThreadsColumns.DATE)
     public Date creationDate;
-    
+
     @Nullable
     @Mapping(Telephony.ThreadsColumns.RECIPIENT_IDS)
     public String recipients;
-    
+
     @Mapping(Telephony.ThreadsColumns.MESSAGE_COUNT)
     public int messageCount;
-    
+
     @Mapping(Telephony.ThreadsColumns.READ)
     public boolean allRead;
-    
+
     @Mapping(Telephony.ThreadsColumns.SNIPPET)
     public String lastMessageSnippet;
-    
+
     @Mapping(Telephony.ThreadsColumns.TYPE)
     public int threadType;
-    
+
     @Mapping(Telephony.ThreadsColumns.ARCHIVED)
     public boolean archived;
 

@@ -11,12 +11,13 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactAddress implements ToJSON {
 
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS)
     public String address;
-    
+
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.StructuredPostal.STREET)
     public String street;

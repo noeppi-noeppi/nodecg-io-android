@@ -10,7 +10,7 @@ import org.json.JSONException;
 import java.util.List;
 
 public enum AvailableObject {
-    
+
     TELEPHONY("system", "telephony", ctx -> ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY)),
     WIFI("system", "wifi", ctx -> ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI)),
     GPS("sensor", "gps", ctx -> {
@@ -38,21 +38,20 @@ public enum AvailableObject {
     AMBIENT_LIGHT("sensor", "light", ctx -> {
         SensorManager mgr = ctx.getSystemService(SensorManager.class);
         return mgr.getDefaultSensor(Sensor.TYPE_LIGHT) != null;
-    })
-    ;
-    
+    });
+
     public final String type;
     public final String value;
     private final FailFunction<Context, Boolean> available;
     private final Permission[] permissions;
-    
+
     AvailableObject(String type, String value, FailFunction<Context, Boolean> available, Permission... permissions) {
         this.type = type;
         this.value = value;
         this.available = available;
         this.permissions = permissions;
     }
-    
+
     public boolean available(Context ctx) throws JSONException, FailureException {
         Permissions.ensure(ctx, this.permissions);
         return this.available.apply(ctx);

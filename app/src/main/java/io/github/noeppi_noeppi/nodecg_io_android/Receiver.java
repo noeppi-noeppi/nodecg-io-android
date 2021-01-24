@@ -21,7 +21,9 @@ public class Receiver extends BroadcastReceiver {
 
     private final Map<String, Action> actions = ImmutableMap.<String, Action>builder()
             .put("ping", Actions::ping)
+            .put("ensure_permissions", Actions::ensurePermissions)
             .put("request_permissions", Actions::requestPermissions)
+            .put("request_special", Actions::requestSpecial)
             .put("check_availability", Actions::checkAvailability)
             .put("show_toast", Actions::showToast)
             .put("cancel_subscription", Actions::cancelSubscription)
@@ -63,6 +65,8 @@ public class Receiver extends BroadcastReceiver {
             .put("wifi_state", Actions::getWifiState)
             .put("scan_wifi", Actions::scanWifi)
             .put("request_wifi_connection", Actions::requestWifiConnection)
+            .put("request_telephony_connection", Actions::requestTelephonyConnection)
+            .put("get_usage_statistics", Actions::getUsageStatistics)
             .build();
 
     @Override
@@ -99,7 +103,7 @@ public class Receiver extends BroadcastReceiver {
         }
 
         System.out.println("PORT: " + port);
-        
+
         Feedback feedback = new Feedback(port, id);
 
         if (this.actions.containsKey(actionId)) {

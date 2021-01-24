@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         this.requestAlertPermission();
         this.requestIntentPermissions();
+        this.requestSpecialPermission();
         this.handleNetworkConnectivity();
     }
 
@@ -54,12 +55,11 @@ public class MainActivity extends AppCompatActivity {
         if (permissions != null && permissions.length > 0 && Feedback.has(intent)) {
             Feedback feedback = Feedback.get(intent);
             ActivityResultLauncher<String[]> requestPermissionLauncher = this.registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), map -> {
-                Set<String> left = new HashSet<>(Arrays.asList(permissions));
-                map.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).forEach(left::remove);
                 try {
+                    Set<String> left = new HashSet<>(Arrays.asList(permissions));
+                    map.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).forEach(left::remove);
                     if (left.isEmpty()) {
                         feedback.sendFeedback("success", true);
-                        this.finish();
                     } else {
                         JSONObject json = new JSONObject();
                         json.put("success", false);
@@ -67,10 +67,49 @@ public class MainActivity extends AppCompatActivity {
                         feedback.sendFeedback(json);
                     }
                 } catch (FailureException | JSONException e) {
+                    //
+                } finally {
                     feedback.sendOptionalFeedback(new JSONObject());
                 }
             });
             requestPermissionLauncher.launch(permissions);
+        }
+    }
+
+    private void requestSpecialPermission() {
+        Intent intent = this.getIntent();
+        String permission = intent.getStringExtra("io.github.noeppi_noeppi.nodecg_io_android.SPECIAL_PERMISSION");
+        if (permission != null && Feedback.has(intent)) {
+            Feedback feedback = Feedback.get(intent);
+            Permission perm = null;
+            Intent settingsIntent = null;
+            if (permission.equals(Permission.STATISTICS.id)) {
+                perm = Permission.STATISTICS;
+                settingsIntent = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + this.getPackageName()));
+            } else {
+                feedback.sendOptionalFeedback(new JSONObject());
+            }
+            if (settingsIntent != null) {
+                Permission effectiveFinalPermission = perm;
+                ActivityResultLauncher<Intent> requestPermissionLauncher = this.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                    try {
+                        if (effectiveFinalPermission.special.apply(this)) {
+                            feedback.sendFeedback("success", true);
+                        } else {
+                            JSONObject json = new JSONObject();
+                            json.put("success", false);
+                            json.put("errmsg", "Failed to get special permission " + effectiveFinalPermission.id);
+                            feedback.sendFeedback(json);
+                        }
+                    } catch (FailureException | JSONException e) {
+                        //
+                    } finally {
+                        feedback.sendOptionalFeedback(new JSONObject());
+                    }
+                    this.finish();
+                });
+                requestPermissionLauncher.launch(settingsIntent);
+            }
         }
     }
 

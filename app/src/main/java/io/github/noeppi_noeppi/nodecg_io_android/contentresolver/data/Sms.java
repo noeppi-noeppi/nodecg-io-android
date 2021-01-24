@@ -11,17 +11,18 @@ import org.json.JSONObject;
 import java.util.Date;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class Sms implements ToJSON {
 
     @Mapping(BaseColumns._ID)
     public long _id;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.ADDRESS)
     public String address;
 
     @Mapping(Telephony.TextBasedSmsColumns.SUBJECT)
     public String subject;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.BODY)
     public String body = "";
 
@@ -30,22 +31,22 @@ public class Sms implements ToJSON {
 
     @Mapping(value = Telephony.TextBasedSmsColumns.DATE_SENT)
     public Date sentDate;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.THREAD_ID)
     public long threadId;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.READ)
     public boolean read;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.SEEN)
     public boolean seen;
-    
+
     @Mapping(value = Telephony.TextBasedSmsColumns.SUBSCRIPTION_ID)
     public long subscriptionId = -1;
-    
+
     @Mapping(Telephony.TextBasedSmsColumns.PERSON)
     public long sender = -1;
-    
+
     public JSONObject toJSON() throws JSONException {
         JSONObject json = new JSONObject();
         json.put("id", this._id);

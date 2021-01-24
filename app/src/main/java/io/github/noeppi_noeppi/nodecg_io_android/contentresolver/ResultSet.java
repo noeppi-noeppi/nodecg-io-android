@@ -28,12 +28,12 @@ public class ResultSet<T> implements Closeable {
         );
         this.cursor.moveToFirst();
     }
-    
+
     @WillClose
     public List<T> getDataList() {
         return this.getDataList(true);
     }
-    
+
     public List<T> getDataList(boolean close) {
         if (this.cursor == null || this.cursor.isClosed()) {
             return ImmutableList.of();
@@ -52,12 +52,12 @@ public class ResultSet<T> implements Closeable {
         }
         return ImmutableList.copyOf(list);
     }
-    
+
     @WillClose
     public T head() {
         return this.head(true);
     }
-    
+
     public T head(boolean close) {
         T t = null;
         if (this.cursor.moveToFirst()) {
@@ -70,12 +70,12 @@ public class ResultSet<T> implements Closeable {
         }
         return t;
     }
-    
+
     @WillClose
     public void forEach(Consumer<T> action) {
         this.forEach(action, true);
     }
-    
+
     public void forEach(Consumer<T> action, boolean close) {
         if (this.cursor == null || this.cursor.isClosed()) {
             return;

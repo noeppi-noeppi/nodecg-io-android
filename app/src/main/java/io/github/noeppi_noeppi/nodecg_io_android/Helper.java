@@ -15,6 +15,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.ContactsContract;
+import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -32,16 +33,29 @@ import org.json.JSONObject;
 import java.util.*;
 import java.util.function.Consumer;
 
+@SuppressWarnings("DuplicateBranchesInSwitch")
 public class Helper {
-    
-    public static void runTaskWithActivity(Context ctx, String reason, Feedback feedback, Consumer<Intent> intentModifier) throws FailureException, JSONException {
+
+    public static void runTaskWithActivity(Context ctx, String reason, Feedback feedback, boolean activityRequiresResult, Consumer<Intent> intentModifier) throws FailureException, JSONException {
+        if (!Settings.canDrawOverlays(ctx)) {
+            JSONObject json = new JSONObject();
+            json.put("success", false);
+            json.put("errmsg", "nodecg-io-android has no SYSTEM ALERT WINDOW permission. Start the app and you'll be redirected to the settings page to grant that permission.");
+            Receiver.logger.info("Failed to start activity: SYSTEM ALERT WINDOW permission not granted.");
+            return;
+        }
+
         Intent intent = new Intent(ctx, MainActivity.class);
         intentModifier.accept(intent);
         Feedback.attach(intent, feedback);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        // startActivityForResult only works when this flag is not set. So we don'T set it if the activity needs
+        // to call startActivityForResult
+        if (!activityRequiresResult) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        }
         intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
         // Very weird but it seems to only work this way...
@@ -61,7 +75,7 @@ public class Helper {
             newFeedback.sendFeedback(json);
         }
     }
-    
+
     public static int getAudioStream(JSONObject msg) throws JSONException {
         String channel = msg.getString("channel").toLowerCase();
         switch (channel) {
@@ -349,7 +363,7 @@ public class Helper {
             default: return "unknown";
         }
     }
-    
+
     public static String getContactPresence(int contactPresenceId) {
         switch (contactPresenceId) {
             case ContactsContract.StatusUpdates.OFFLINE: return "offline";
@@ -361,7 +375,7 @@ public class Helper {
             default: return "offline";
         }
     }
-    
+
     public static String getContactNameStyle(int contactPresenceId) {
         switch (contactPresenceId) {
             case ContactsContract.FullNameStyle.UNDEFINED: return "unset";
@@ -373,7 +387,7 @@ public class Helper {
             default: return "unset";
         }
     }
-    
+
     public static Pair<String, String> getContactDataAccount(JSONObject data) throws JSONException {
         JSONArray contactAccount = data.getJSONArray("contact_account");
         if (contactAccount.length() != 2) {
@@ -457,7 +471,7 @@ public class Helper {
             default: return "unknown";
         }
     }
-    
+
     public static String getWifiConnectionStandard(int wifiStandard) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             switch (wifiStandard) {
@@ -472,7 +486,7 @@ public class Helper {
             return "unknown";
         }
     }
-    
+
     public static String getWifiChannelBandwidth(int bandwidth) {
         switch (bandwidth) {
             case ScanResult.CHANNEL_WIDTH_20MHZ: return "20MHz";
@@ -483,7 +497,7 @@ public class Helper {
             default: return "unknown";
         }
     }
-    
+
     public static String ipToString(int ip) {
         return "" + (ip & 0xFF) + "." + ((ip >>> 8) & 0xFF) + "." + ((ip >>> 16) & 0xFF) + "." + ((ip >>> 24) & 0xFF);
     }

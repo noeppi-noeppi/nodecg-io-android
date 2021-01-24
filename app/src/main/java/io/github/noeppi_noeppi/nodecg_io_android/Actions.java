@@ -4,6 +4,8 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -21,11 +23,13 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.*;
-import android.net.wifi.*;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiNetworkSpecifier;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -57,6 +61,20 @@ public class Actions {
         System.out.println("Sensors: \n\n" + mgr.getSensorList(Sensor.TYPE_ALL).stream().map(Sensor::toString).collect(Collectors.joining("\n")));
     }
 
+    public static void ensurePermissions(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        JSONArray permissionsArray = data.getJSONArray("permissions");
+        Set<Permission> permissions = new HashSet<>();
+        for (int i = 0; i < permissionsArray.length(); i++) {
+            String permissionStr = permissionsArray.getString(i).toLowerCase();
+            for (Permission permission : Permission.values()) {
+                if (permission.id.equals(permissionStr)) {
+                    permissions.add(permission);
+                }
+            }
+        }
+        Permissions.ensure(ctx, permissions.toArray(new Permission[]{}));
+    }
+
     public static void requestPermissions(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         JSONArray permissionsArray = data.getJSONArray("permissions");
         Set<String> permissionCollect = new HashSet<>();
@@ -64,6 +82,9 @@ public class Actions {
             String permissionStr = permissionsArray.getString(i).toLowerCase();
             for (Permission permission : Permission.values()) {
                 if (permission.id.equals(permissionStr)) {
+                    if (permission.special != null) {
+                        throw new FailureException("Can't request special permission via requestPermissions. User requestSpecial instead.");
+                    }
                     permissionCollect.addAll(permission.perms);
                 }
             }
@@ -72,14 +93,31 @@ public class Actions {
         if (permissions.isEmpty()) {
             feedback.sendFeedback("success", true);
             Receiver.logger.info("Requesting no permissions: all granted.");
-        } else if (!Settings.canDrawOverlays(ctx)) {
-            JSONObject json = new JSONObject();
-            json.put("success", false);
-            json.put("errmsg", "nodecg-io-android has no SYSTEM ALERT WINDOW permission. STart the app and you'll be redirected to the settings page to grant that permission.");
-            Receiver.logger.info("Failed to request runtime permissions: SYSTEM ALERT WINDOW permission not granted.");
         } else {
-            Helper.runTaskWithActivity(ctx, "Request permissions: " + String.join(",", permissions), feedback,
+            Helper.runTaskWithActivity(ctx, "Request permissions: " + String.join(",", permissions), feedback, true,
                     intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.REQUEST_PERMISSIONS", permissions.toArray(new String[]{})));
+        }
+    }
+
+    public static void requestSpecial(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
+        String permissionStr = data.getString("permission");
+        Permission permission = null;
+        for (Permission p : Permission.values()) {
+            if (p.id.equals(permissionStr) && p.special != null) {
+                permission = p;
+                break;
+            }
+        }
+        if (permission == null) {
+            throw new FailureException("Unknown special permission: " + permissionStr);
+        }
+        if (permission.special.apply(ctx)) {
+            feedback.sendFeedback("success", true);
+            Receiver.logger.info("Requesting no special permission: all granted.");
+        } else {
+            Permission effectiveFinalPermission = permission;
+            Helper.runTaskWithActivity(ctx, "Special Permission: " + permission.id, feedback, true,
+                    intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.SPECIAL_PERMISSION", effectiveFinalPermission.id));
         }
     }
 
@@ -229,7 +267,7 @@ public class Actions {
                 try {
                     subscription.sendEvent(Helper.locationToJson(location));
                     Receiver.logger.info("Sending location update to subscriber: " + subscription.id);
-                } catch (JSONException | FailureException e) {
+                } catch (JSONException e) {
                     Receiver.logger.warning("Failed to send location update: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
@@ -273,7 +311,7 @@ public class Actions {
                     JSONObject json = new JSONObject();
                     MotionSensors.addSensorData(json, event, sensorId);
                     subscription.sendEvent(json);
-                } catch (JSONException | FailureException e) {
+                } catch (JSONException e) {
                     Receiver.logger.warning("Failed to send motion sensor update: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
@@ -662,7 +700,7 @@ public class Actions {
             delayed.sendError("Failed to start wifi scan.");
         }
     }
-    
+
     public static void requestWifiConnection(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             throw new FailureException("Wifi connection requesting requires Android 10.");
@@ -704,7 +742,47 @@ public class Actions {
                 .setNetworkSpecifier(specifier)
                 .build();
 
-        Helper.runTaskWithActivity(ctx, "Request WiFi connection", feedback,
+        Helper.runTaskWithActivity(ctx, "Request WiFi connection", feedback, false,
                 intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.NETWORK_CONNECTIVITY_REQUEST", request));
+    }
+
+    public static void requestTelephonyConnection(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            throw new FailureException("Telephony connection requesting requires Android 11.");
+        }
+        SubscriptionInfo telephony = Helper.getTelephony(ctx, data);
+        TelephonyNetworkSpecifier specifier = new TelephonyNetworkSpecifier.Builder()
+                .setSubscriptionId(telephony.getSubscriptionId())
+                .build();
+        NetworkRequest request = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .setNetworkSpecifier(specifier)
+                .build();
+
+        Helper.runTaskWithActivity(ctx, "Request Telephony connection", feedback, false,
+                intent -> intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.NETWORK_CONNECTIVITY_REQUEST", request));
+    }
+
+    public static void getUsageStatistics(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
+        UsageStatsManager mgr = ctx.getSystemService(UsageStatsManager.class);
+        String pkg = data.getString("package");
+        long startDate = data.has("start_date") ? data.getLong("start_date") : Long.MIN_VALUE;
+        long endDate = data.has("end_date") ? data.getLong("end_date") : Long.MAX_VALUE;
+        Map<String, UsageStats> stats = mgr.queryAndAggregateUsageStats(startDate, endDate);
+        if (stats.containsKey(pkg) && stats.get(pkg) != null) {
+            UsageStats stat = Objects.requireNonNull(stats.get(pkg));
+            JSONObject json = new JSONObject();
+            json.put("package", stat.getPackageName());
+            json.put("start", stat.getFirstTimeStamp());
+            json.put("end", stat.getLastTimeStamp());
+            json.put("lastTimeUsed", stat.getLastTimeUsed());
+            json.put("lastTimeVisible", stat.getLastTimeVisible());
+            json.put("totalTimeUsed", stat.getTotalTimeInForeground());
+            json.put("totalTimeVisible", stat.getTotalTimeVisible());
+            feedback.sendFeedback("stats", json);
+        } else {
+            feedback.sendFeedback(new JSONObject());
+        }
     }
 }

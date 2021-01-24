@@ -11,12 +11,13 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactEvent implements ToJSON {
 
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Event.START_DATE)
     public String date;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.Event.TYPE)
     public int type;
 

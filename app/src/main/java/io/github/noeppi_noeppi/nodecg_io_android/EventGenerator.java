@@ -21,7 +21,7 @@ public enum EventGenerator {
 
     private final BiFunction<Integer, Intent, String> resultFunc;
 
-    EventGenerator(BiFunction<Integer, Intent, String> resultFunc, boolean unused) {
+    EventGenerator(BiFunction<Integer, Intent, String> resultFunc, @SuppressWarnings("unused") boolean unused) {
         this.resultFunc = resultFunc;
     }
 

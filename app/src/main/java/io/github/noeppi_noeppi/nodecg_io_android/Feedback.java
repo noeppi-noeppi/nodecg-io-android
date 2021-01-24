@@ -48,10 +48,11 @@ public class Feedback {
     };
 
     private static final SSLContext ssl;
+
     static {
         try {
             ssl = SSLContext.getInstance("SSL");
-            ssl.init(null, trustAllCerts, new java.security.SecureRandom()); 
+            ssl.init(null, trustAllCerts, new java.security.SecureRandom());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException("Could not create SSLContext", e);
         }
@@ -209,24 +210,24 @@ public class Feedback {
         json.put("event", true);
         json.put("data", data);
         return PendingIntent.getBroadcast(ctx, nextIntentCode++, new Intent()
-                .setAction("nodecg-io.actions.EVENT")
-                .addCategory(Intent.CATEGORY_DEFAULT)
-                .setClass(ctx, Events.class)
-                .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
-                .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
-                .putExtra("evtGenerator", EventGenerator.DEFAULT.name())
-                .putExtra("evtData", json.toString()),
+                        .setAction("nodecg-io.actions.EVENT")
+                        .addCategory(Intent.CATEGORY_DEFAULT)
+                        .setClass(ctx, Events.class)
+                        .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
+                        .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
+                        .putExtra("evtGenerator", EventGenerator.DEFAULT.name())
+                        .putExtra("evtData", json.toString()),
                 PendingIntent.FLAG_IMMUTABLE);
     }
-    
+
     public PendingIntent getEvent(Context ctx, EventGenerator generator) {
         return PendingIntent.getBroadcast(ctx, nextIntentCode++, new Intent()
-                .setAction("nodecg-io.actions.EVENT")
-                .addCategory(Intent.CATEGORY_DEFAULT)
-                .setClass(ctx, Events.class)
-                .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
-                .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
-                .putExtra("evtGenerator", generator.name()),
+                        .setAction("nodecg-io.actions.EVENT")
+                        .addCategory(Intent.CATEGORY_DEFAULT)
+                        .setClass(ctx, Events.class)
+                        .putExtra("evtPort", Integer.toString(this.port)) // This must be strings as android
+                        .putExtra("evtId", Integer.toString(this.id))     // seems to not store ints correctly.
+                        .putExtra("evtGenerator", generator.name()),
                 PendingIntent.FLAG_IMMUTABLE);
     }
 
@@ -321,24 +322,25 @@ public class Feedback {
             }
         });
     }
-    
+
     // Attaches a feedback to an intent. This will also mark the feedback as invalid so no default
     // feedback is sent. Make sure you send a feedback in any case.
+    @SuppressWarnings("UnusedReturnValue")
     public static Intent attach(Intent intent, Feedback feedback) throws FailureException {
         if (feedback.hasSentFeedback) {
             throw new FailureException("Tried to add an invalid feedback to an intent.");
         }
-        intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK", new int[]{ feedback.port, feedback.id });
+        intent.putExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK", new int[]{feedback.port, feedback.id});
         feedback.hasSentFeedback = true;
         return intent;
     }
-    
+
     // Checks whether te intent has a Feedback attached.
     public static boolean has(Intent intent) {
         int[] data = intent.getIntArrayExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
         return data != null && data.length == 2;
     }
-    
+
     // Gets a feedback from an intent. Can only be used once.
     public static Feedback get(Intent intent) {
         int[] data = intent.getIntArrayExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
@@ -348,7 +350,7 @@ public class Feedback {
         intent.removeExtra("io.github.noeppi_noeppi.nodecg_io_android.FEEDBACK");
         return new Feedback(data[0], data[1]);
     }
-    
+
     // Gets a new feedback and invalidates the old so you can send it later.
     public static Feedback delay(Feedback feedback) throws FailureException {
         if (feedback.hasSentFeedback) {

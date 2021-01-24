@@ -11,12 +11,13 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 
 @DataClass
+@SuppressWarnings("CanBeFinal")
 public class ContactNickname implements ToJSON {
 
     @Nullable
     @Mapping(ContactsContract.CommonDataKinds.Nickname.NAME)
     public String name;
-    
+
     @Mapping(ContactsContract.CommonDataKinds.Nickname.TYPE)
     public int type;
 
