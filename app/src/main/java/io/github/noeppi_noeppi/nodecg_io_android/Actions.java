@@ -1,5 +1,6 @@
 package io.github.noeppi_noeppi.nodecg_io_android;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -244,6 +245,7 @@ public class Actions {
         if (!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             throw new FailureException("GPS is not active.");
         }
+        @SuppressLint("MissingPermission") // checked by Permissions.ensure(ctx, Permission.GPS); (first line of method)
         Location lastKnown = mgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         JSONObject json = new JSONObject();
         if (lastKnown == null) {
@@ -255,6 +257,7 @@ public class Actions {
         feedback.sendFeedback(json);
     }
 
+    @SuppressLint("MissingPermission") // Required permissions are checked on Permissions.ensure
     public static void gpsSubscribe(Context ctx, JSONObject data, Feedback feedback) throws JSONException, FailureException {
         Permissions.ensure(ctx, Permission.GPS);
         LocationManager mgr = ctx.getSystemService(LocationManager.class);
@@ -388,6 +391,7 @@ public class Actions {
         feedback.sendFeedback("telephonies", array);
     }
 
+    @SuppressLint("MissingPermission") // Required permissions are checked on Helper.getTelephony
     public static void getTelephonyProperties(Context ctx, JSONObject data, Feedback feedback) throws FailureException, JSONException {
         SubscriptionInfo subInfo = Helper.getTelephony(ctx, data);
         TelephonyManager mgr = Helper.getTelephonyManager(ctx, subInfo);
@@ -400,12 +404,12 @@ public class Actions {
 
         json.put("name", subInfo.getDisplayName().toString());
 
-        String mcc = subInfo.getMccString();
+        String mcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? subInfo.getMccString() : null;
         if (mcc != null && !mcc.isEmpty()) {
             json.put("countryCode", mcc);
         }
 
-        String mnc = subInfo.getMncString();
+        String mnc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? subInfo.getMncString() : null;
         if (mnc != null && !mnc.isEmpty()) {
             json.put("networkCode", mnc);
         }
@@ -415,14 +419,14 @@ public class Actions {
             json.put("countryISO", iso);
         }
 
-        json.put("embedded", subInfo.isEmbedded());
+        json.put("embedded", Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && subInfo.isEmbedded());
 
         String number = mgr.getLine1Number();
         if (number != null && !number.isEmpty()) {
             json.put("number", number);
         }
 
-        String manufacturerCode = mgr.getManufacturerCode();
+        String manufacturerCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? mgr.getManufacturerCode() : null;
         if (manufacturerCode != null && !manufacturerCode.isEmpty()) {
             json.put("manufacturerCode", manufacturerCode);
         }
@@ -646,7 +650,7 @@ public class Actions {
                 //noinspection deprecation
                 json.put("signal_level", WifiManager.calculateSignalLevel(connection.getRssi(), 100) / (double) 100);
             }
-            if (connection.getPasspointFqdn() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && connection.getPasspointFqdn() != null) {
                 json.put("passpoint", true);
                 json.put("passpoint_fqdn", connection.getPasspointFqdn());
             } else {
@@ -777,9 +781,9 @@ public class Actions {
             json.put("start", stat.getFirstTimeStamp());
             json.put("end", stat.getLastTimeStamp());
             json.put("lastTimeUsed", stat.getLastTimeUsed());
-            json.put("lastTimeVisible", stat.getLastTimeVisible());
+            json.put("lastTimeVisible", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? stat.getLastTimeVisible() : stat.getLastTimeUsed());
             json.put("totalTimeUsed", stat.getTotalTimeInForeground());
-            json.put("totalTimeVisible", stat.getTotalTimeVisible());
+            json.put("totalTimeVisible", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? stat.getTotalTimeVisible() : stat.getTotalTimeInForeground());
             feedback.sendFeedback("stats", json);
         } else {
             feedback.sendFeedback(new JSONObject());
